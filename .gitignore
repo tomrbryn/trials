@@ -1,0 +1,6 @@
+.env
+*bundle*
+node_modules/
+static/editor
+static/Game*
+static/physics*

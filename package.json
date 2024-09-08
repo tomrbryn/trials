@@ -1,0 +1,36 @@
+{
+  "name": "trials",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "watch:CodeGenerator": "nodemon --watch ./ts/CodeGenerator.ts  --watch ./ts/Schema.ts --exec \"npx tsx ./ts/CodeGenerator.ts\"",
+    "watch:cbuild": "nodemon --watch ./c --ext c --exec \"cbuild.bat\"",
+    "build": "node esbuild.config.cjs",
+    "watch:build": "nodemon --watch ./ts --ext ts,js,svelte esbuild.config.cjs",
+    "serve": "npx tsx app.ts",
+    "watch:serve": "nodemon --watch app.ts --exec \"npm run serve\"",
+    "start": "concurrently \"npm run watch:serve\" \"npm run watch:cbuild\" \"npm run watch:build\" \"npm run watch:CodeGenerator\""
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "@tsconfig/svelte": "^5.0.4",
+    "concurrently": "^8.2.2",
+    "esbuild": "^0.23.1",
+    "esbuild-svelte": "^0.8.1",
+    "nodemon": "^3.1.4",
+    "svelte": "^4.2.19",
+    "svelte-preprocess": "^6.0.2",
+    "tsx": "^4.19.0",
+    "typescript": "^5.5.4"
+  },
+  "type": "module",
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "express": "^4.19.2",
+    "express-session": "^1.18.0",
+    "sqlite": "^5.1.1",
+    "sqlite3": "^5.1.7"
+  }
+}
