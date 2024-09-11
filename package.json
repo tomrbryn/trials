@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "watch:CodeGenerator": "nodemon --watch ./ts/CodeGenerator.ts  --watch ./ts/Schema.ts --exec \"npx tsx ./ts/CodeGenerator.ts\"",
+    "watch:CodeGenerator": "nodemon --watch ./ts/server/CodeGenerator.ts  --watch ./ts/Schema.ts --exec \"npx tsx ./ts/server/CodeGenerator.ts\"",
     "watch:cbuild": "nodemon --watch ./c --ext c --exec \"cbuild.bat\"",
     "build": "node esbuild.config.cjs",
     "watch:build": "nodemon --watch ./ts --ext ts,js,svelte esbuild.config.cjs",

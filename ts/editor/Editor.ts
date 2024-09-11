@@ -2,12 +2,12 @@ import { gridStore, defaultGrid, scaleFactorStore, modeStore, modes, levelEntryS
 import { Canvas } from "../Canvas";
 import { type Closest, createLevel, findClosest, levelToBinary, lineArraysToLines, type Point, riderToBinary } from "../LevelCreator";
 import { setupReload } from "../ServerSideEvents";
-import EditorUI from './Editor.svelte'; // Import the Svelte component
+import EditorUI from './Editor.svelte';
 import { UndoRedoManager } from './UndoRedoManager';
 import { createDefaultLevelEntry, type LevelEntry } from './LevelEntry';
 import { createPhysics, Physics } from '../Physics';
 import { createSchema, schemaDefinition } from '../Schema';
-import { GameCanvas } from '../GameCanvas';
+import { GameCanvas } from '../game/GameCanvas';
 import { Rider } from '../GameStructGeneratedCode';
 import { INPUT_CHECKPOINT, KeyState as KeyState } from '../KeyState';
 import type { Action } from './UndoRedoManager';
@@ -307,12 +307,18 @@ export class Editor {
             ctx.lineCap = "round";
             ctx.fillStyle = "white";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+
+            ctx.font = "64px 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif";
     
+
             ctx.save();
             ctx.translate(canvas.width / 2, canvas.height / 2);
             ctx.scale(this.scaleFactor, this.scaleFactor);
             ctx.translate(-this.center.x, -this.center.y);
-    
+
+
+
             if (grid > 0) {
                 ctx.strokeStyle = "#888";
                 let upperLeft = mouseToGrid({x: 0, y: 0});
@@ -352,6 +358,7 @@ export class Editor {
             let checkpoints = level.checkpoints;
             for (let cp of checkpoints) {
                 Canvas.drawLine(ctx, cp[0], cp[1], cp[0], cp[1]-100, "#777700");
+                ctx.fillText("🚩", cp[0], cp[1]-100);
             }
             if (mode == "addCheckpoint" && movePointGrid) {
                 Canvas.drawLine(ctx, movePointGrid.x, movePointGrid.y, movePointGrid.x, movePointGrid.y-100, "#77770033");

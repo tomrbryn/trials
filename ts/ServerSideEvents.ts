@@ -15,7 +15,9 @@ export function setupServerSideEvents(callback) {
 }    
 
 export function setupReload() {
+    console.log("setupReload");
     setupServerSideEvents((e) => {
+        console.log("setupReload", e.data);
         setTimeout(() => location.reload(), e.data.endsWith(".js") ? 0 : 3000);
     });
 }

@@ -197,8 +197,6 @@ export class RiderCreator {
         this.riderEdgesIndex = this.edges.length;
         this.riderEdgesCount = riderEdges.length;
         this.addEdges(riderEdges);
-        console.log("first Edge lengths", this.leanForwardsEdgeLengths[0], this.leanBackwardsEdgeLengths[0], this.edges[this.riderEdgesIndex].length);
-
     }
 
     createWheel(x: number, y: number, radius: number, tireRadius: number, type: number): number {

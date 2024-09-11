@@ -19,7 +19,7 @@
     const dispatch = createEventDispatcher();
 
     let modeMap = {
-        addCheckpoint: '┃<sup>✔</sup>',
+        addCheckpoint:"🚩",
         addCircle: '⚫',//'⚪',
         addLineArray: '┌─┘',
         movePoint: "↔", //'◦ ↔ ◦'

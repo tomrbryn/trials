@@ -4,7 +4,7 @@ import { InputRecording } from "./InputRecording";
 export async function createPhysics(): Promise<Physics> {
     return new Promise((resolve, reject) => {
         const script = document.createElement('script');
-        script.src = '/trials/physics.js';
+        script.src = '/trials/public/physics.js';
         document.body.appendChild(script);
 
         script.onload = async () => resolve(new Physics(await createPhysicsModule()));      

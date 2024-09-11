@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
-import { createSchema, schemaDefinition, type Schema } from './Schema';
+import { createSchema, schemaDefinition, type Schema } from '../Schema';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -11,10 +11,10 @@ if (process.argv[1] === __filename) {
     let schema = createSchema(schemaDefinition);
     let tsCode = generateTypeScriptCode(schema);
     console.log(tsCode);
-    fs.writeFileSync(__dirname + "/GameStructGeneratedCode.ts", tsCode);
+    fs.writeFileSync(__dirname + "/../GameStructGeneratedCode.ts", tsCode);
 
     let cCode = generateCCode(schema);
-    fs.writeFileSync(path.resolve(__dirname, "../c/GameStructGeneratedCode.c"), cCode);
+    fs.writeFileSync(path.resolve(__dirname, "../../c/GameStructGeneratedCode.c"), cCode);
 }
 
 function generateTypeScriptCode(schema: Schema): string {

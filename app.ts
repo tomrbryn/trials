@@ -189,6 +189,33 @@ interface Highscore {
         res.status(200).json(rows);
     }));
     
+    // GET: Get all levels including tries and ticks for a user
+    app.get('/trials/api/levels/user/:userId', asyncMiddleware(async (req, res) => {
+        const { userId } = req.params;
+        console.log("userId", userId);
+
+
+        const query = `
+            SELECT 
+                levels.info,
+                highscores.tries,
+                highscores.ticks
+            FROM 
+                levels
+            LEFT JOIN 
+                highscores 
+            ON 
+                levels.id = highscores.level_id 
+            AND 
+                highscores.user_id = ?
+        `;
+
+        const rows = await db.all(query, [userId]);
+
+        rows.forEach(row => row.info = JSON.parse(row.info));
+        res.status(200).json(rows);
+    }));
+    
     // GET: Get level info, json, and base64 by id
     app.get('/trials/api/levels/:id', asyncMiddleware(async (req, res) => {
         const { id } = req.params;
@@ -201,7 +228,7 @@ interface Highscore {
         res.status(200).json(row);
     }));
     
-    app.use("/trials", express.static('static'));
+    app.use("/trials/public", express.static('static'));
     
     let clients = [];
     app.get('/trials/events', (req, res) => {
@@ -225,9 +252,9 @@ interface Highscore {
         res.send(`<!DOCTYPE html>
             <html lang="en">
             <head>
-            <script type="module" src="/trials/editor/Editor.js"></script>
-            <link href="/trials/editor/Editor.css" rel="stylesheet">
-            <link href="/trials/Common.css" rel="stylesheet">
+            <script type="module" src="/trials/public/Editor.js"></script>
+            <link href="/trials/public/Editor.css" rel="stylesheet">
+            <link href="/trials/public/Common.css" rel="stylesheet">
             </head>
             <body>
             </body>
@@ -239,8 +266,9 @@ interface Highscore {
         res.send(`<!DOCTYPE html>
             <html lang="en">
             <head>
-            <script type="module" src="/trials/Game.js"></script>
-            <link href="/trials/Common.css" rel="stylesheet">
+            <script type="module" src="/trials/public/Game.js"></script>
+            <link href="/trials/public/Game.css" rel="stylesheet">
+            <link href="/trials/public/Common.css" rel="stylesheet">
             </head>
             <body>
                 <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex;">

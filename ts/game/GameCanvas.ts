@@ -1,5 +1,5 @@
-import { Canvas } from "./Canvas.ts";
-import type { TrialsGame, Level, Rider, VertexArray } from "./GameStructGeneratedCode.js";
+import { Canvas } from "../Canvas.ts";
+import type { TrialsGame, Level, Rider, VertexArray } from "../GameStructGeneratedCode.js";
 
 export class GameCanvas {
 

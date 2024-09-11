@@ -3,9 +3,10 @@ const sveltePlugin = require('esbuild-svelte');
 const sveltePreprocess = require('svelte-preprocess');
 
 esbuild.build({
-  entryPoints: ['ts/Game.ts', 'ts/editor/Editor.ts'],
+  entryPoints: ['ts/game/Game.ts', 'ts/editor/Editor.ts'],
   bundle: true,
   outdir: 'static',
+  entryNames: '[name]', // This ensures the output files are named after the entry points
   globalName: 'Main',
   plugins: [
     sveltePlugin({
