@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
-import { createSchema, schemaDefinition, type Schema } from '../Schema';
+import { Builder, createSchema, schemaDefinition, type Schema } from '../Schema';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -10,10 +10,12 @@ const __dirname = dirname(__filename);
 if (process.argv[1] === __filename) {
     let schema = createSchema(schemaDefinition);
     let tsCode = generateTypeScriptCode(schema);
-    console.log(tsCode);
+    console.log("Generated code: ===============================================");
+    // console.log(tsCode);
     fs.writeFileSync(__dirname + "/../GameStructGeneratedCode.ts", tsCode);
 
     let cCode = generateCCode(schema);
+    console.log(cCode);
     fs.writeFileSync(path.resolve(__dirname, "../../c/GameStructGeneratedCode.c"), cCode);
 }
 
@@ -51,7 +53,7 @@ function generateTypeScriptCode(schema: Schema): string {
 
         let getCastMap = {
             "u32": (v) => `Number(${v})`,
-            "i64": (v) => `Number(${v} / 256n)`,
+            "i64": (v) => `Number(${v} / ${1 << Builder.BITS}n)`,
             "bool": (v) => `${v} != 0 ? true : false)`,
         }
         let dataViewMap = {
@@ -106,7 +108,7 @@ function generateCCode(schema: Schema): string {
         "i64": "int64_t",
         "bool": "uint32_t",
     }
-    let code = ``;
+    let code = `#define BITS ${Builder.BITS}\n`;
     for (let type of Object.values(schema)) {
         if (!type.isPrimitive && !type.name.endsWith("Array")) {
             code += `uint32_t ${type.name}Stride = ${type.size};\n`;

@@ -1,48 +1,53 @@
 <script lang="ts">
-    import { onMount } from 'svelte';
+    import { Game } from "./Game";
+    import { pushDialog, userStore, updateUserStore } from "./GameStore";
+    import { type LevelScoreType, ticksToTimeString } from "../Utils"
 
-    type LevelType = {
-        info: any;
-        tries: number;
-        ticks: number;
-    }
-    let levels: LevelType[] = [];
-    let dialog: HTMLDialogElement;
+// 🏆 👑 🥇  🥈  🥉    
 
-    function openModal() {
-        dialog.showModal();
-    }
 
-    function closeModal() {
-        dialog.close();
-    }
+    let levels: LevelScoreType[] = [];
 
     async function fetchLevels() {
-        levels = await (await fetch('/trials/api/levels/user/0')).json();
-        console.log("Levels2", levels);
+        levels = await (await fetch(`/trials/api/levels/user/${$userStore?.id ?? -1}`)).json();
     }
     fetchLevels();    
 
-    onMount(() => {
-        console.log("LevelList mounted");
-        dialog.showModal();
-    });
 
-    console.log("LevelList.svelte2");
+    async function handleOpen(level: LevelScoreType) {
+        await Game.loadLevel(level);
+        Game.instance.play();
+        pushDialog("game");
+    }
+
+    async function handleHighscores(level: LevelScoreType) {
+        await Game.loadLevel(level);
+        pushDialog("levelHighscores");
+    }
+
+    const handleSignOut = async () => {
+        console.log(await (await fetch('/trials/api/user/logout', {method: "POST"})).text());
+        await updateUserStore();
+    }
+
 </script>
 
-
-<button on:click={openModal}>Show Levels</button>
-
-<div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; z-index: 1000;">
-    <dialog bind:this={dialog}>
+<div class="modal-overlay">
+    <dialog open style="min-width: 20rem; max-width: 80%">
         <h2>Levels</h2>
+        <div class="flex_row">
+            <div>username: {$userStore?.username ?? "guest"}</div>
+            <button class="btn" on:click={() => pushDialog("login")}>Sign in</button>
+            <button class="btn" on:click={() => handleSignOut()}>Sign out</button>
+        </div>
+    
         <table>
             <thead>
                 <tr>
                     <th>Name</th>
                     <th>Tries</th>
                     <th>Time</th>
+                    <th></th>
                 </tr>
             </thead>
             <tbody>
@@ -50,33 +55,18 @@
                     <tr>
                         <td>{level.info.name}</td>
                         <td>{level.tries}</td>
-                        <td>{level.ticks}</td>
+                        <td>{ticksToTimeString(level.ticks)}</td>
+                        <td>
+                            <button class="btn" on:click={() => handleOpen(level)}><div class="icon">▶</div></button>
+                            <button class="btn" on:click={() => handleHighscores(level)}><div class="icon">🏆</div></button>
+                        </td>
                     </tr>
                 {/each}
             </tbody>
         </table>
-        <button on:click={closeModal}>Close</button>
     </dialog>    
 </div>
 
 
 <style>
-    dialog {
-        border: none;
-        border-radius: 8px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        padding: 20px;
-        z-index: 1000;
-    }
-    table {
-        width: 100%;
-        border-collapse: collapse;
-    }
-    th, td {
-        border: 1px solid #ddd;
-        padding: 8px;
-    }
-    th {
-        background-color: #f2f2f2;
-    }
 </style>

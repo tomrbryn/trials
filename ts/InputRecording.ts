@@ -1,5 +1,7 @@
+
 export class InputRecording {
-    public recording: number[] = [];
+
+    constructor(public recording: number[] = []) {}
 
     record(input: number) {
         this.recording.push(input);
@@ -9,8 +11,8 @@ export class InputRecording {
         this.recording = [];
     }
 
-    runnlengthEncode() {
-        let result = [];
+    runlengthEncode(): number[] {
+        let result: number[] = [];
         let current = this.recording[0];
         let repeatCount = 0;
         let i = 1;
@@ -30,14 +32,14 @@ export class InputRecording {
         return result;
     }
 
-    runnlengthDecode(data: number[]) {
+    static runnlengthDecode(data: number[]): InputRecording {
         let result = [];
         for (let i = 0; i < data.length; i += 2) {
             for (let j = 0; j <= data[i + 1]; j++) {
                 result.push(data[i]);
             }
         }
-        return result;
+        return new InputRecording(result);
     }
 }
 
@@ -45,12 +47,12 @@ function testInputRecording() {
     let input = [1, 1, 1, 2, 1];
     let recording = new InputRecording();
     input.forEach(i => recording.record(i));
-    let encoded = recording.runnlengthEncode();
-    let decoded = recording.runnlengthDecode(encoded);
+    let encoded = recording.runlengthEncode();
+    let decoded = InputRecording.runnlengthDecode(encoded).recording;
     console.log("InputRecording test", encoded, decoded, "==", input);
     if (input.some((val, i) => val !== decoded[i])) {
         console.error("InputRecording test failed");
         return;
     }
 }
-testInputRecording();
+// testInputRecording();

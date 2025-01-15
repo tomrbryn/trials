@@ -1,16 +1,17 @@
-import { gridStore, defaultGrid, scaleFactorStore, modeStore, modes, levelEntryStore } from './EditorStore';
+import { gridStore, defaultGrid, scaleFactorStore } from '../EditorStore';
+import { modeStore, modes, levelEntryStore } from './LevelEditorStore';
 import { Canvas } from "../Canvas";
 import { type Closest, createLevel, findClosest, levelToBinary, lineArraysToLines, type Point, riderToBinary } from "../LevelCreator";
 import { setupReload } from "../ServerSideEvents";
-import EditorUI from './Editor.svelte';
-import { UndoRedoManager } from './UndoRedoManager';
-import { createDefaultLevelEntry, type LevelEntry } from './LevelEntry';
+import EditorUI from './LevelEditor.svelte';
+import { UndoRedoManager } from '../UndoRedoManager';
+import { createDefaultLevelEntry, type LevelEntry } from '../Entry';
 import { createPhysics, Physics } from '../Physics';
 import { createSchema, schemaDefinition } from '../Schema';
 import { GameCanvas } from '../game/GameCanvas';
-import { Rider } from '../GameStructGeneratedCode';
 import { INPUT_CHECKPOINT, KeyState as KeyState } from '../KeyState';
-import type { Action } from './UndoRedoManager';
+import type { Action } from '../UndoRedoManager';
+import { RiderCreator } from '../RiderCreator';
 
 // don't show default context menu in browser
 document.addEventListener('contextmenu', (event) => event.preventDefault());
@@ -28,7 +29,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     let physics = await createPhysics();
     let schema = createSchema(schemaDefinition);
-    let riderData = riderToBinary(schema);
+    let riderData = riderToBinary(schema, new RiderCreator().createDefault());
+    console.log("riderData", riderData);
     const editor = new Editor(physics, riderData);
     new EditorUI({target: document.body, props: {editor}});
 });
@@ -44,7 +46,7 @@ export class Editor {
     constructor(public physics: Physics, public riderData: ArrayBuffer) {
     }
     
-    start(canvas: HTMLElement) {
+    start(canvas: HTMLCanvasElement) {
         const MOVE_POINT_MAX_DISTANCE = 200;
 
         levelEntryStore.subscribe(value => {
@@ -71,6 +73,7 @@ export class Editor {
         let addCircleData: number[] | null = null;
         let addLineArrayData: number[][] | null = null;
         let movePointData: Closest | null = null;
+        let moveCheckpointStart: number[][] | null = null;
         let lastMovePointData: Closest | null = null;
         let panStartCenter: Point | null = null;
         let panStartPressPoint: Point | null = null;
@@ -130,6 +133,12 @@ export class Editor {
                 }
                 if (lastMovePointData.type === "checkpoint") {
                     let captureCheckpoint = level.checkpoints[lastMovePointData.index];
+                    let undoCheckpoints = level.checkpoints.slice();
+                    let redoCheckpoints = level.checkpoints.slice();
+                    redoCheckpoints.push(captureCheckpoint);
+                    console.log("delete checkpoint", undoCheckpoints, redoCheckpoints);
+                    redoCheckpoints.sort((a, b) => a[0] - b[0]);
+
                     this.addAction({
                         undo: () => level.checkpoints.splice(captureMovePointData.index, 0, captureCheckpoint), 
                         redo: () => level.checkpoints.splice(captureMovePointData.index, 1)
@@ -243,20 +252,44 @@ export class Editor {
                 addLineArrayData[addLineArrayData.length-1] = [posGrid.x, posGrid.y];
             } else if (button === 0 &&type === "mousedown" && mode === "addCheckpoint") { // Add checkpoint
                 let posGrid = mouseToGrid(pos);
-                let capture = [posGrid.x, posGrid.y];
-                this.addAction({undo: () => {level.checkpoints.pop()}, redo: () => {level.checkpoints.push(capture)}});
+                let undoCheckpoints = level.checkpoints.slice();
+                let redoCheckpoints = level.checkpoints.slice();
+                redoCheckpoints.push([posGrid.x, posGrid.y]);
+                redoCheckpoints.sort((a, b) => a[0] - b[0]);
+
+                this.addAction({
+                    undo: () => level.checkpoints.splice(0, level.checkpoints.length, ...undoCheckpoints),
+                    redo: () => level.checkpoints.splice(0, level.checkpoints.length, ...redoCheckpoints)
+                });
             } else if (button === 0 && type === "mousedown" && mode === "movePoint") { // Move point
                 let closest = findClosest(level, mouseToWorld(pos), MOVE_POINT_MAX_DISTANCE);
                 if (closest.point) {
                     movePointData = closest;
+                    if (closest.type === "checkpoint") {
+                        moveCheckpointStart = level.checkpoints.slice();
+                        moveCheckpointStart[closest.index] = moveCheckpointStart[closest.index].slice();
+                        console.log("start move checkpoint", moveCheckpointStart);
+                    }
                 }
             } else if (button === 0 && type === "mouseup" && movePointData) {
                 let capture = movePointData;
-                let capturePointGrid = movePointGrid;
-                this.addAction({
-                    undo: () => updateLevelWithClosestPoint(capture, capture.point),
-                    redo: () => updateLevelWithClosestPoint(capture, capturePointGrid)
-                });
+                if (capture.type === "checkpoint") {
+                    let undoCheckpoints = moveCheckpointStart?.slice();
+                    let redoCheckpoints = level.checkpoints.slice();
+                    redoCheckpoints[movePointData.index] = redoCheckpoints[movePointData.index].slice();
+                    redoCheckpoints.sort((a, b) => a[0] - b[0]);
+                    console.log("end move checkpoint", undoCheckpoints, redoCheckpoints);
+                    this.addAction({
+                        undo: () => level.checkpoints.splice(0, level.checkpoints.length, ...undoCheckpoints),
+                        redo: () => level.checkpoints.splice(0, level.checkpoints.length, ...redoCheckpoints)
+                    });
+                } else {
+                    let capturePointGrid = movePointGrid;
+                    this.addAction({
+                        undo: () => updateLevelWithClosestPoint(capture, capture.point),
+                        redo: () => updateLevelWithClosestPoint(capture, capturePointGrid)
+                    });
+                }
                 // for delete
                 lastMovePointData = movePointData;
                 movePointData = null;
@@ -271,8 +304,7 @@ export class Editor {
                 this.levelEntry.json.circles[closest.index][0] = point.x;
                 this.levelEntry.json.circles[closest.index][1] = point.y;
             } else if (closest.type === "checkpoint") {
-                this.levelEntry.json.checkpoints[closest.index][0] = point.x;
-                this.levelEntry.json.checkpoints[closest.index][1] = point.y;
+                this.levelEntry.json.checkpoints[closest.index] = [point.x, point.y];
             }
         }        
     
@@ -350,18 +382,19 @@ export class Editor {
                 Canvas.drawLine(ctx, p1[0], p1[1], p2[0], p2[1], "blue");
             }
 
-            GameCanvas.paintRider(ctx, this.physics.rider);
 
             if (mode == "addLineArray" && addLineArrayData == null && movePointGrid) {
                 Canvas.fillOval(ctx, movePointGrid.x, movePointGrid.y, grid > 0 ? grid / 10 : 10, "#0000FF33");
             }
+            let currentCheckpointIndex = this.physics.trialsGame.getCurrentCheckpoint();
             let checkpoints = level.checkpoints;
-            for (let cp of checkpoints) {
-                Canvas.drawLine(ctx, cp[0], cp[1], cp[0], cp[1]-100, "#777700");
-                ctx.fillText("🚩", cp[0], cp[1]-100);
+            for (let i = 0; i < checkpoints.length; i++) {
+                let cp = checkpoints[i];
+                GameCanvas.paintCheckpoint(ctx, cp[0], cp[1], i <= currentCheckpointIndex);
+
             }
             if (mode == "addCheckpoint" && movePointGrid) {
-                Canvas.drawLine(ctx, movePointGrid.x, movePointGrid.y, movePointGrid.x, movePointGrid.y-100, "#77770033");
+                GameCanvas.paintCheckpoint(ctx, movePointGrid.x, movePointGrid.y, false);
             }
     
             if (mode == "movePoint" && movePoint) {
@@ -372,6 +405,8 @@ export class Editor {
                     Canvas.strokeOval(ctx, closest.point.x, closest.point.y, grid > 0 ? grid / 5 : 20, "#000");
                 }
             }
+            
+            GameCanvas.paintRider(ctx, this.physics.rider);
     
             ctx.restore();        
         }
@@ -379,8 +414,16 @@ export class Editor {
     }
     
     addAction(action: Action) {
-        this.undoRedoManager.addAction(action);
-        this.updatePhysicsLevel();
+        this.undoRedoManager.addAction({
+            undo: () => {
+                action.undo();
+                this.updatePhysicsLevel();
+            },
+            redo: () => {
+                action.redo();
+                this.updatePhysicsLevel();
+            }
+        });
     }
     
     new() {

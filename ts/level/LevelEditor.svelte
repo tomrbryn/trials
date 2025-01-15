@@ -1,10 +1,10 @@
 <script lang="ts">
     import { onMount } from 'svelte';
-    import { Editor } from './Editor';
-    import EditorToolbar from './EditorToolbar.svelte';
+    import { Editor } from './LevelEditor';
+    import EditorToolbar from './LevelEditorToolbar.svelte';
 
     export let editor: Editor;
-    let canvas: HTMLElement;
+    let canvas: HTMLCanvasElement;
 
     onMount(() => editor.start(canvas));
 </script>

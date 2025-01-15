@@ -1,11 +1,7 @@
 import { Rider } from "./GameStructGeneratedCode";
 import { Builder } from "./Schema";
 import { Vertex as VertexStruct, Edge as EdgeStruct } from "./GameStructGeneratedCode";
-
-export const TYPE_UNKNOWN = 0;
-export const TYPE_RIDER = 1;
-export const TYPE_BACK_WHEEL = 2;
-export const TYPE_FRONT_WHEEL = 3;
+import type { Point } from "./LevelCreator";
 
 function seededRandom(seed: number): () => number {
     // Parameters for the LCG
@@ -23,38 +19,118 @@ function seededRandom(seed: number): () => number {
     };
 }    
 
-class Tuple {
-    x = 0;
-    y = 0;
+export type ClosestRiderPointType = "none" | "vertex" | "edge";
+
+export type ClosestRiderPoint = {
+    point: Point | null,
+    distance: number,
+    type: ClosestRiderPointType,
+    index: number,
+};
+
+export function findClosest(rider: RiderCreator, pos: Point, maxDistance: number = Number.MAX_VALUE): ClosestRiderPoint {
+    let closest: ClosestRiderPoint = {
+        point: null,
+        distance: maxDistance,
+        type: "none",
+        index: -1,
+    }
+
+    let register = (closestPoint: Point, distance: number, type: ClosestRiderPointType, index: number) => {
+        if (distance < closest.distance) {
+            closest.distance = distance;
+            closest.point = {x: closestPoint.x, y: closestPoint.y};
+            closest.type = type;
+            closest.index = index;
+        }
+    }
+
+    let closestVertex = (p: Tuple, r: number, type: ClosestRiderPointType, index: number) => {
+        let dx = pos.x - p.x;
+        let dy = pos.y - p.y;
+        let distance = Math.sqrt(dx * dx + dy * dy) - r;
+        register(p, distance, type, index);
+    }
+
+    for (let i = 0; i < rider.vertices.length; i++) {
+        closestVertex(rider.vertices[i].pos, rider.vertices[i].radius, "vertex", i);
+    }
+
+    for (let i = 0; i < rider.edges.length; i++) {
+        let edge = rider.edges[i];
+        let v1 = rider.vertices[edge.v1Idx];
+        let v2 = rider.vertices[edge.v2Idx];
+        let p1 = v1.pos;
+        let p2 = v2.pos;
+        closestVertex(p1, 0, "edge", i);
+        closestVertex(p2, 0, "edge", i);
+        let x1 = v1.pos.x;
+        let y1 = v1.pos.y;
+        let x2 = v2.pos.x;
+        let y2 = v2.pos.y;
+        let dx = x2 - x1;
+        let dy = y2 - y1;
+        let t = ((pos.x - x1) * dx + (pos.y - y1) * dy) / (dx * dx + dy * dy);
+        let x = x1 + t * dx;
+        let y = y1 + t * dy;
+        if (t >= 0 && t <= 1) {
+            let distance = Math.sqrt((pos.x - x) * (pos.x - x) + (pos.y - y) * (pos.y - y));
+            register({x, y}, distance, "edge", i);
+        }
+    }
+
+    return closest;
 }
 
-class Vertex {
+export class Tuple {
+    constructor(public x = 0, public y = 0) {}
+
+    static distance(t1: Tuple, t2: Tuple): number {
+        const dx = t1.x - t2.x;
+        const dy = t1.y - t2.y;
+        return Math.sqrt((dx * dx) + (dy * dy));
+    }
+
+    isNan() {
+        return isNaN(this.x) || isNaN(this.y);
+    }
+}
+
+export class Vertex {
+
+    static readonly MASK_COLLIDABLE = 1
+    static readonly MASK_DEATH_TRIGGER = 2
+    static readonly MASK_WHEEL = 4
+    static readonly MASK_DRIVE_TRAIN = 8
+    
     pos = new Tuple();
+    lean = new Tuple(NaN, NaN);
     old = new Tuple(); 
     acc = new Tuple(); 
     radius = 0; 
     mass = 1; 
-    collidable = false;
-    type = TYPE_UNKNOWN;
+    collidable = true;
+    deathTrigger = false;
+    wheel = false;
+    driveTrain = false;
 
-    update() {
-        const tempX = this.pos.x;
-        const tempY = this.pos.y;
-        this.pos.x += this.pos.x - this.old.x + this.acc.x;
-        this.pos.y += this.pos.y - this.old.y + this.acc.y;
-        this.old.x = tempX;
-        this.old.y = tempY;
+    getPos(leaning: boolean): Tuple {
+        return leaning && !this.lean.isNan() ? this.lean : this.pos;
     }
 
-    static lineLength(v1: Vertex, v2: Vertex) {
-        const dx = v1.pos.x - v2.pos.x;
-        const dy = v1.pos.y - v2.pos.y;
-        return Math.sqrt((dx * dx) + (dy * dy));
+    createFlags(): number {
+        let flags = 0;
+        flags |=  this.collidable ? 1 : 0;
+        flags |=  this.deathTrigger ? 1 << 1 : 0;
+        flags |=  this.wheel ? 1 << 2 : 0;
+        flags |=  this.driveTrain ? 1 << 3 : 0;
+        return flags;
     }
 }
 
-class Edge {
+export class Edge {
     length = 0;
+    leanLength = 0;
     stiffness = 0;
     damping = 0;
     minLength = 0;
@@ -64,31 +140,37 @@ class Edge {
     // maps into vertices
     v1Idx = 0;
     v2Idx = 0;
+
+    getLength(vs: Vertex[], leaning: boolean): number {
+        return Tuple.distance(vs[this.v1Idx].getPos(leaning), vs[this.v2Idx].getPos(leaning));
+    }
 }
 
-function createVertex(x, y, radius, type = TYPE_UNKNOWN): Vertex {
+export function createVertex(x: number, y: number, radius: number, deathTrigger: boolean = false, leanx = NaN, leany = NaN): Vertex {
     const v = new Vertex();
     v.pos.x = x;
     v.pos.y = y;
+    v.lean.x = leanx;
+    v.lean.y = leany;
     v.old.x = x;
     v.old.y = y;
     v.radius = radius;
     v.mass = Math.PI * radius * radius;
-    v.collidable = true;
-    v.type = type;
     return v;
 }
 
 
-function createEdge(globalVs, v1, v2, stiffness, damping) {   
+export function createEdge(globalVs: Vertex[], v1: Vertex, v2: Vertex, stiffness: number, damping: number): Edge {   
     const edge = new Edge();
     edge.stiffness = stiffness;
     edge.damping = damping;
     edge.v1Idx = globalVs.indexOf(v1);
     edge.v2Idx = globalVs.indexOf(v2);
-    edge.length = Vertex.lineLength(v1, v2);
+    edge.length = Tuple.distance(v1.pos, v2.pos);
+    edge.leanLength = (v1.lean.isNan() && v2.lean.isNan()) ? -1 
+        : Tuple.distance(v1.lean.isNan() ? v1.pos : v1.lean, v2.lean.isNan() ? v2.pos : v2.lean);
     edge.totalMass = v1.mass + v2.mass;
-    edge.maxLength = 100000;
+    edge.maxLength = Math.max(edge.length, edge.leanLength);
     edge.visible = true;
     return edge;
 }
@@ -104,26 +186,71 @@ function createEdges(globalVs: Vertex[], vs: Vertex[], stiffness: number): Edge[
 }
 
 export class RiderCreator {
+    iterations = 10;
+    wheelTorque = 1.25;
+    bikeTorque = 0.01;//0.02;
     vertices: Vertex[] = [];
     edges: Edge[] = [];
-    leanForwardsEdgeLengths: number[] = [];
-    leanBackwardsEdgeLengths: number[] = [];
-    riderEdgesIndex = 0;
-    riderEdgesCount = 0;
-    backWheelIdx = 0;
-    frontWheelIdx = 0;
-    bikeFootIdx = 0;
-    chainIdx = 0;
-    stearingIdx = 0;
-    buttIdx = 0;
+
+    createSimple(): RiderCreator {
+        this.iterations = 3;
+        this.wheelTorque = 0.4 * 4;
+        this.bikeTorque = 0.005 * 2;
+
+        let backWheelIdx = this.createWheel(-87, -45, 38, 8, true);
+        let frontWheelIdx = this.createWheel(87, -45, 38, 8, false);
+        let frontWheel = this.vertices[frontWheelIdx]
+        let backWheel = this.vertices[backWheelIdx]
+        let chain = createVertex(-20, -55, 13); // chain front center
+        let back = createVertex(-80, -120, 13); // chain front center
+        let front = createVertex(50, -130, 13); // chain front center
+        let rider = createVertex(-10, -100, 30);
+        // rider.deathTrigger = true;
+        rider.lean.x = 30;
+        rider.lean.y = -180;
+        let vs = [chain, back, front];
+        this.vertices.push(...vs);
+        this.vertices.push(rider);
+
+        // const frontSpring = createEdge(this.vertices, frontWheel, front,  0.15, 0.0);
+        const frontSpring = createEdge(this.vertices, frontWheel, front,  0.15, 0.2);
+        frontSpring.minLength = frontSpring.maxLength * 0.75;
+        // const backSpring = createEdge(this.vertices, backWheel, back,  0.15, 0.0);
+        const backSpring = createEdge(this.vertices, backWheel, back,  0.15, 0.2);
+        backSpring.minLength = backSpring.maxLength * 0.75;
+        const frontEdge = createEdge(this.vertices, frontWheel, chain, 1, 0)
+        const backEdge = createEdge(this.vertices, backWheel, chain, 1, 0)
+        const backEdge2 = createEdge(this.vertices, backWheel, front, 0.75, 0)
+
+        this.edges.push(createEdge(this.vertices, rider, front, 0.25, 0.01));
+        this.edges.push(createEdge(this.vertices, rider, chain, 0.25, 0.01));
+        this.edges.push(createEdge(this.vertices, rider, back, 0.25, 0.01));
+
+        this.edges.push(frontEdge);
+        this.edges.push(backEdge);
+        this.edges.push(frontSpring);
+        this.edges.push(backSpring);
+        this.addEdges(createEdges(this.vertices, vs, 0.4));
 
 
-    create() {
+        this.edges.push(backSpring);
+        // this.edges.push(backSpring);
+        //this.edges.push(backSpring);
+        // this.edges.push(backEdge);
+        this.edges.push(backEdge2);
+
+        this.randomizeEdges();
+
+        return this;
+    }
+
+    createDefault(): RiderCreator {
+
         // -------------- create bike ----------------
-        this.backWheelIdx = this.createWheel(48, 125, 38, 8, TYPE_BACK_WHEEL);
-        this.frontWheelIdx = this.createWheel(223, 125, 38, 8, TYPE_BACK_WHEEL);
-        const backWheel = this.vertices[this.backWheelIdx];
-        const frontWheel = this.vertices[this.frontWheelIdx];
+        let backWheelIdx = this.createWheel(48, 125, 38, 8, true);
+        let frontWheelIdx = this.createWheel(223, 125, 38, 8, false);
+        const backWheel = this.vertices[backWheelIdx];
+        const frontWheel = this.vertices[frontWheelIdx];
         let stearing = createVertex(176, 19, 10); // stearing
         let bikeFoot = createVertex(101, 114, 10); // foot
         let chain = createVertex(125, 113, 13); // chain front center
@@ -131,54 +258,42 @@ export class RiderCreator {
         const round = createVertex(144, 116, 11); //
         const skjerm = createVertex(70, 59, 8); // back skjerm
         let vs = [stearing, bikeFoot, chain, round, skjerm, engine];
-        this.bikeFootIdx = this.vertices.length + vs.indexOf(bikeFoot);
-        this.chainIdx = this.vertices.length + vs.indexOf(chain);
-        this.stearingIdx = this.vertices.length + vs.indexOf(stearing);
         for (let vsIdx=0; vsIdx < vs.length; vsIdx++) {
             this.vertices.push(vs[vsIdx]);
         }
 
         const hard = 1;
-        this.addRandomEdges(createEdges(this.vertices, vs, hard));
+        this.addEdges(createEdges(this.vertices, vs, hard));
 
         const frontSpring = createEdge(this.vertices, frontWheel, stearing,  0.15, 0);
         frontSpring.damping = 0.05;
         frontSpring.maxLength = 120;//116;
         frontSpring.minLength = 90;
         frontSpring.length = 120;
-        this.addRandom(frontSpring);
-        this.addRandom(createEdge(this.vertices, frontWheel, chain, hard, 0));
-        this.addRandom(createEdge(this.vertices, frontWheel, chain, hard, 0));
-        this.addRandom(createEdge(this.vertices, frontWheel, chain, hard, 0));
-        this.addRandom(createEdge(this.vertices, backWheel, chain, hard, 0));
-        this.addRandom(createEdge(this.vertices, backWheel, chain, hard, 0));
-        this.addRandom(createEdge(this.vertices, backWheel, chain, hard, 0));
-        const e = createEdge(this.vertices, backWheel, skjerm, .12, 0);
+        this.edges.push(frontSpring);
+        this.edges.push(createEdge(this.vertices, frontWheel, chain, hard, 0));
+        this.edges.push(createEdge(this.vertices, frontWheel, chain, hard, 0));
+        this.edges.push(createEdge(this.vertices, frontWheel, chain, hard, 0));
+        this.edges.push(createEdge(this.vertices, backWheel, chain, hard, 0));
+        this.edges.push(createEdge(this.vertices, backWheel, chain, hard, 0));
+        this.edges.push(createEdge(this.vertices, backWheel, chain, hard, 0));
+        const e = createEdge(this.vertices, backWheel, skjerm, 1, 0);
         e.maxLength = 70;//69;
         e.minLength = 50;
         e.damping = 0.05;
-        this.addRandom(e);
-        this.addRandom(e);
+        e.stiffness = 0.3;//0.12;
+        this.edges.push(e, e);
 
         // ------------- create rider ------------------
-        let knee = createVertex(130, 80, 11, TYPE_RIDER);
-        let butt = createVertex(95, 50, 15, TYPE_RIDER);
-        let shoulders = createVertex(137, 15, 15, TYPE_RIDER);
-        let head = createVertex(150, -10, 10, TYPE_RIDER);
-        let foot = createVertex(100, 114, 10, TYPE_RIDER);
+        let knee = createVertex(130, 80, 11, true);
+        let butt = createVertex(95, 50, 15, true, 130, 20);
+        let shoulders = createVertex(137, 15, 15, true, 175, -20);
+        let head = createVertex(150, -10, 10, true, 190, -45);
+        let foot = createVertex(100, 114, 10, true);
         foot.collidable = false;
-        let hands = createVertex(175, 19, 10, TYPE_RIDER);
-
-        let knee2 = createVertex(130, 80, 11, TYPE_RIDER);
-        let butt2 = createVertex(130, 20, 15, TYPE_RIDER);
-        let shoulders2 = createVertex(175, -20, 15, TYPE_RIDER);
-        let head2 = createVertex(190, -45, 10, TYPE_RIDER);
-        let foot2 = createVertex(100, 114, 10, TYPE_RIDER);
-        foot2.collidable = false;
-        let hands2 = createVertex(175, 19, 10, TYPE_RIDER);
+        let hands = createVertex(175, 19, 10, true);
 
         let riderVertices = [knee, butt, shoulders, head, foot, hands];
-        this.buttIdx = this.vertices.length + riderVertices.indexOf(butt);
 
         for (let i=0; i < riderVertices.length; i++) {
             this.vertices.push(riderVertices[i]);
@@ -188,21 +303,21 @@ export class RiderCreator {
         // riderVertices.push(skjerm);
         // riderVertices.push(engine);
 
-        
-        let vs2: Vertex[] = [knee2, butt2, shoulders2, head2, foot2, hands2, stearing, bikeFoot/*, skjerm, engine*/];
-
-        this.leanForwardsEdgeLengths = createEdges(this.vertices, riderVertices, 0.9).map(e => e.length);
         let riderEdges = createEdges(this.vertices, riderVertices, 0.9);
-        this.leanBackwardsEdgeLengths = createEdges(vs2, vs2, 0.9).map(e => e.length);
-        this.riderEdgesIndex = this.edges.length;
-        this.riderEdgesCount = riderEdges.length;
         this.addEdges(riderEdges);
+        this.randomizeEdges();
+        return this;
     }
 
-    createWheel(x: number, y: number, radius: number, tireRadius: number, type: number): number {
-        const wheel = createVertex(x, y, radius + tireRadius, type);
+    createWheel(x: number, y: number, radius: number, tireRadius: number, isDriveTrain: boolean): number {
+        const wheel = createVertex(x, y, radius + tireRadius);
+        const mass2 = Math.PI * radius * radius;
+        // wheel mass is area of the tire
+        wheel.mass -= mass2;
         wheel.mass = 500;
         wheel.old.x = wheel.pos.x;
+        wheel.wheel = true;
+        wheel.driveTrain = isDriveTrain;
         return this.vertices.push(wheel) - 1;
     }
     
@@ -210,28 +325,19 @@ export class RiderCreator {
         this.edges.push(...edges);
     }
 
-    addRandomEdges(edges: Edge[]) {
-        for (let i = 0; i < edges.length; i++) {
-            this.addRandom(edges[i]);
+    randomizeEdges() {
+        let random = seededRandom(123456);
+        let edges = this.edges;
+        for (let i = edges.length - 1; i > 0; i--) {
+            const j = Math.floor(random() * (i + 1));
+            [edges[i], edges[j]] = [edges[j], edges[i]]; // Swap elements
         }
     }
 
-    addRandom(edge: Edge) {
-        let random = seededRandom(123456);
-        let idx = Math.floor(random() * this.edges.length);
-        this.edges.splice(idx, 0, edge);
-    }
-
     applyToBuilder(b: Builder) {
-
-        b.setUint32(0, "Rider", "riderEdgesIndex", this.riderEdgesIndex);
-        b.setUint32(0, "Rider", "riderEdgesCount", this.riderEdgesCount);
-        b.setUint32(0, "Rider", "backWheelIdx", this.backWheelIdx);
-        b.setUint32(0, "Rider", "frontWheelIdx", this.frontWheelIdx);
-        b.setUint32(0, "Rider", "bikeFootIdx", this.bikeFootIdx);
-        b.setUint32(0, "Rider", "chainIdx", this.chainIdx);
-        b.setUint32(0, "Rider", "stearingIdx", this.stearingIdx);
-        b.setUint32(0, "Rider", "buttIdx", this.buttIdx);
+        b.setUint32(0, "Rider", "iterations", this.iterations);
+        b.setFp(0, "Rider", "wheelTorque", this.wheelTorque);
+        b.setFp(0, "Rider", "bikeTorque", this.bikeTorque);
         let [verticesPtr, verticesLength] = b.setArray(0, "Rider", "vertices", b.createArray("Vertex", this.vertices.length));
         for (let i = 0; i < this.vertices.length; i++) {
             let vertexPtr = b.getArrayElement(verticesPtr, "Vertex", i);
@@ -239,11 +345,21 @@ export class RiderCreator {
             b.setFp(vertexPtr, "Vertex", "y", this.vertices[i].pos.y);
             b.setFp(vertexPtr, "Vertex", "radius", this.vertices[i].radius);
             b.setFp(vertexPtr, "Vertex", "mass", this.vertices[i].mass);
-            b.setUint32(vertexPtr, "Vertex", "collidable", this.vertices[i].collidable ? 1 : 0);
-            b.setUint32(vertexPtr, "Vertex", "type", this.vertices[i].type);
+            b.setUint32(vertexPtr, "Vertex", "flags", this.vertices[i].createFlags());
         }
-        let [startVerticesPtr, startVerticesLength] = b.setArray(0, "Rider", "startVertices", b.createArray("Vertex", this.vertices.length));
-        b.copy(verticesPtr, startVerticesPtr, startVerticesLength * VertexStruct.SIZE);
+        let [startVerticesPtr, startVerticesLength] = b.setArray(0, "Rider", "startVertices", b.createArray("StartVertex", this.vertices.length));
+        for (let i = 0; i < this.vertices.length; i++) {
+            let startVertexPtr = b.getArrayElement(startVerticesPtr, "StartVertex", i);
+            let p0 = this.vertices[i].getPos(false);
+            let p1 = this.vertices[i].getPos(true);
+            b.setFp(startVertexPtr, "StartVertex", "x", p0.x);
+            b.setFp(startVertexPtr, "StartVertex", "y", p0.y);
+            b.setFp(startVertexPtr, "StartVertex", "x0", p0.x);
+            b.setFp(startVertexPtr, "StartVertex", "y0", p0.y);
+            b.setFp(startVertexPtr, "StartVertex", "x1", p1.x);
+            b.setFp(startVertexPtr, "StartVertex", "y1", p1.y);
+        }
+
         let [edgesPtr, edgesLength] = b.setArray(0, "Rider", "edges", b.createArray("Edge", this.edges.length));
         for (let i = 0; i < this.edges.length; i++) {
             let edge = b.getArrayElement(edgesPtr, "Edge", i);
@@ -259,14 +375,6 @@ export class RiderCreator {
         }
         let [startEdgesPtr, startEdgesLength] = b.setArray(0, "Rider", "startEdges", b.createArray("Edge", this.edges.length));
         b.copy(edgesPtr, startEdgesPtr, edgesLength * EdgeStruct.SIZE);
-        let [forwardsPtr, forwardsLength] = b.setArray(0, "Rider", "leanForwardsEdgeLengths", b.createArray("i64", this.leanForwardsEdgeLengths.length));
-        for (let i = 0; i < this.leanForwardsEdgeLengths.length; i++) {
-            b.setFpAt(forwardsPtr + i * 8, this.leanForwardsEdgeLengths[i]);
-        }
-        let [backwardsPtr, backwardsLength] = b.setArray(0, "Rider", "leanBackwardsEdgeLengths", b.createArray("i64", this.leanBackwardsEdgeLengths.length));
-        for (let i = 0; i < this.leanBackwardsEdgeLengths.length; i++) {
-            b.setFpAt(backwardsPtr + i * 8, this.leanBackwardsEdgeLengths[i]);
-        }
     }
 }
 
@@ -276,15 +384,9 @@ export function debugRiderData(riderData: ArrayBuffer) {
 
 export function debugRider(rider: Rider) {
     console.log("debugRider");
-    console.log("  fontWheel: ", rider.getFrontWheelIdx());
-    console.log("  backWheel: ", rider.getBackWheelIdx());
-    console.log("  bikeFoot: ", rider.getBikeFootIdx());
-    console.log("  buttIdx: ", rider.getButtIdx());
-    console.log("  chainIdx: ", rider.getChainIdx());
     let verticesTemp = rider.getVertices();
     console.log("  vertices: ", verticesTemp.ptr, verticesTemp.getOffset(), verticesTemp.getLength());
     for (let i = 0; i < verticesTemp.getLength(); i++) {
-
         let v = verticesTemp.get(i);
         console.log("    ", i, v.getX(), v.getY());
     }

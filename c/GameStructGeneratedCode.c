@@ -1,6 +1,8 @@
-uint32_t VertexStride = 72;
+#define BITS 12
+uint32_t VertexStride = 68;
 uint32_t EdgeStride = 60;
-uint32_t RiderStride = 80;
+uint32_t StartVertexStride = 48;
+uint32_t RiderStride = 68;
 uint32_t LineStride = 32;
 uint32_t CircleStride = 24;
 uint32_t CheckpointStride = 20;
@@ -16,8 +18,7 @@ typedef struct {
     int64_t accY;
     int64_t radius;
     int64_t mass;
-    uint32_t collidable;
-    uint32_t type;
+    uint32_t flags;
 } Vertex;
 
 typedef struct {
@@ -33,12 +34,19 @@ typedef struct {
 } Edge;
 
 typedef struct {
-    uint32_t frontWheelIdx;
-    uint32_t backWheelIdx;
-    uint32_t bikeFootIdx;
-    uint32_t chainIdx;
-    uint32_t stearingIdx;
-    uint32_t buttIdx;
+    int64_t x;
+    int64_t y;
+    int64_t x0;
+    int64_t y0;
+    int64_t x1;
+    int64_t y1;
+} StartVertex;
+
+typedef struct {
+    int64_t centerOfMassX;
+    int64_t centerOfMassY;
+    int64_t wheelTorque;
+    int64_t bikeTorque;
     uint32_t verticesOffset;
     uint32_t verticesLength;
     uint32_t edgesOffset;
@@ -47,12 +55,7 @@ typedef struct {
     uint32_t startVerticesLength;
     uint32_t startEdgesOffset;
     uint32_t startEdgesLength;
-    uint32_t leanForwardsEdgeLengthsOffset;
-    uint32_t leanForwardsEdgeLengthsLength;
-    uint32_t leanBackwardsEdgeLengthsOffset;
-    uint32_t leanBackwardsEdgeLengthsLength;
-    uint32_t riderEdgesIndex;
-    uint32_t riderEdgesCount;
+    uint32_t iterations;
 } Rider;
 
 typedef struct {

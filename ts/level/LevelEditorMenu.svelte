@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { gridStore, scaleFactorStore, modeStore, modes } from './EditorStore';
+    import { gridStore, scaleFactorStore, modeStore, modes } from './LevelEditorStore';
     import { createEventDispatcher } from 'svelte';
 
     const dispatch = createEventDispatcher();

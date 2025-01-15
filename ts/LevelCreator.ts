@@ -1,5 +1,5 @@
+import type { RiderCreator } from "./RiderCreator.js";
 import { Builder, Schema } from "./Schema.js";
-import * as RiderCreator from "./RiderCreator.ts";
 
 export type Level = {
     lineArrays: number[][][],
@@ -92,12 +92,13 @@ export function levelToBinary(schema: Schema, level: Level): ArrayBuffer {
     return arrayBuffer.slice(0, builder.offset);
 }
 
-export function riderToBinary(schema: Schema): ArrayBuffer {
+export function riderToBinary(schema: Schema, rider: RiderCreator): ArrayBuffer {
     let arrayBuffer = new ArrayBuffer(1024*64);
     let builder = new Builder(schema, "Rider", new DataView(arrayBuffer));
-    let riderCreator = new RiderCreator.RiderCreator();
-    riderCreator.create();
-    riderCreator.applyToBuilder(builder);
+    //let rider = new RiderCreator.RiderCreator();
+    //rider.createSimple();
+    //rider.createDefault();
+    rider.applyToBuilder(builder);
     return arrayBuffer.slice(0, builder.offset);
 }
 
@@ -106,7 +107,7 @@ export function createLevel(): Level {
         lineArrays: [[
             [0, 490],
             [10, 500],
-            [770, 500],
+            [770, 400],
             [770, 380],
             [1000, 380],
             [1200, 340],

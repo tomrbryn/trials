@@ -1,3 +1,4 @@
+import { ticksStore, triesStore, physicsLevelStore } from "./game/GameStore";
 import { Level, Rider, TrialsGame } from "./GameStructGeneratedCode";
 import { InputRecording } from "./InputRecording";
 
@@ -26,13 +27,10 @@ export class Physics {
     }
 
     setData(levelData: ArrayBuffer, riderData: ArrayBuffer) {
-        console.log("setData", levelData.byteLength, riderData.byteLength);
         if (this.levelHeapPtr) {
-            console.log("freeing levelHeapPtr", this.levelHeapPtr);
             this.module._free(this.levelHeapPtr);
         }
         if (this.riderHeapPtr) {
-            console.log("freeing riderHeapPtr", this.riderHeapPtr);
             this.module._free(this.riderHeapPtr);
         }
 
@@ -48,11 +46,15 @@ export class Physics {
 
         this.level = new Level(new DataView(this.module.HEAPU8.buffer, this.levelHeapPtr, levelUint8.length));
         this.rider = new Rider(new DataView(this.module.HEAPU8.buffer, this.riderHeapPtr, riderUint8.length));
+
+        physicsLevelStore.set(this.level);
     }
 
     tick(input: number) {
         this.inputRecording.record(input);
         this.module._tick(input);
+        triesStore.set(this.trialsGame.getTries());
+        ticksStore.set(this.trialsGame.getTickIdx());
     }
 
     newGame() {

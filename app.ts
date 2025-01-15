@@ -5,41 +5,40 @@ import {open} from 'sqlite';
 import path from 'path';
 import bcrypt from 'bcrypt';
 import session from 'express-session';
+import SQLiteStore from 'connect-sqlite3';
 import { fileURLToPath } from 'url';
+import { Highscore } from './ts/Utils.ts';
+import { asyncMiddleware, createCrudTableEndpoints } from './ts/server/EntryCrud.ts';
 
-// Middleware to handle async errors
-function asyncMiddleware(middleware) {
-    return (req, res, next) => Promise.resolve(middleware(req, res, next)).catch(next);
-}
 
 // Get the current module's directory
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const app = express()
 
-const dbPath = path.resolve(__dirname, '../data/trials.db');
+const dataDir = path.resolve(__dirname, './data');
+const dbPath = path.resolve(dataDir, 'trials.sqlite');
 fs.mkdirSync(path.dirname(dbPath), { recursive: true });
 
-// Types
 interface User {
     id: number;
     username: string;
     password: string;
 }
 
-interface Highscore {
-    userId: number;
-    levelId: number;
-    score: number;
-    ticks: number;
-    tries: number;
-}
 (async () => {
-    let db = await open({filename: dbPath,driver: sqlite3.Database});
-    // const db = new sqlite3.Database(dbPath);
+    let db = await open({filename: dbPath, driver: sqlite3.Database});
+    const SQLiteSessionStore = SQLiteStore(session); // connect-sqlite3 needs this
 
     // Create levels table if it doesn't exist
     await db.run(`CREATE TABLE IF NOT EXISTS levels (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        info TEXT,
+        json TEXT,
+        base64 TEXT
+    )`);
+    
+    await db.run(`CREATE TABLE IF NOT EXISTS riders (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         info TEXT,
         json TEXT,
@@ -59,6 +58,8 @@ interface Highscore {
         score INTEGER NOT NULL,
         ticks INTEGER NOT NULL,
         tries INTEGER NOT NULL,
+        inputRecording TEXT,
+        UNIQUE(user_id, level_id),        
         FOREIGN KEY (user_id) REFERENCES users(id),
         FOREIGN KEY (level_id) REFERENCES levels(id)
     )`);
@@ -69,11 +70,18 @@ interface Highscore {
     app.use(express.json());
     app.use(express.urlencoded({ extended: true }));
     app.use(session({
-        secret: 'your_secret_key',  // Change this to something secure
+        store: new SQLiteSessionStore({dir: dataDir, db: "session.sqlite", concurrentDB: true}),        
+        // Change this to something secure
+        secret: 'your_secret_key',  
         resave: false,
         saveUninitialized: false,
         cookie: { secure: false }  // Set to true if using https
     }));    
+
+    app.all("*", (req, res, next) => {
+        console.log(req.method, req.url, "userId", req.session?.userId);
+        next();
+    });
 
 
     app.post('/trials/user/register', asyncMiddleware(async (req: Request, res: Response) => {
@@ -90,6 +98,7 @@ interface Highscore {
 
         await db.run("INSERT INTO users (username, password) VALUES (?, ?)", [username, hashedPassword]);
         res.json({ message: 'User registered successfully' });
+        console.log("User registered successfully", username);
     }));
 
     app.post('/trials/user/login', asyncMiddleware(async (req: Request, res: Response) => {
@@ -97,31 +106,48 @@ interface Highscore {
 
         const user = await db.get<User>("SELECT * FROM users WHERE username = ?", [username]);
         if (!user) {
-            return res.status(400).json({ error: 'Invalid username or password' });
+            console.log("invalid username");
+            return res.status(400).json({ error: 'Invalid username' });
         }
 
         // Compare password with hash
         const validPassword = await bcrypt.compare(password, user.password);
         if (!validPassword) {
-            return res.status(400).json({ error: 'Invalid username or password' });
+            console.log("invalid password");
+            return res.status(400).json({ error: 'Invalid password' });
         }
 
         req.session.userId = user.id;  // Store user ID in session
         res.json({ message: 'Logged in successfully' });
     }));
 
-    app.post('/trials/user/logout', asyncMiddleware(async (req: Request, res: Response) => {
+    app.post('/trials/api/user/logout', asyncMiddleware(async (req: Request, res: Response) => {
+        console.log("logout", req.session.userId);
         req.session.destroy(() => {
             res.json({ message: 'Logged out successfully' });
         });
     }));
 
-    app.post('/trials/highscores/submit-score', asyncMiddleware(async (req: Request, res: Response) => {
+    app.get('/trials/api/session', async (req: Request, res: Response) => {
+        if (req.session.userId) {
+            const user = await db.get("SELECT id AS userId, username FROM users WHERE id = ?", [req.session.userId]);
+            if (user) {
+                res.json(user);
+            } else {
+                res.status(404).json({ error: 'User not found' });
+            }
+        } else {
+            res.status(401).json({ error: 'Not authenticated' });
+        }
+    });    
+
+    app.post('/trials/api/highscores', asyncMiddleware(async (req: Request, res: Response) => {
         if (!req.session.userId) {
             return res.status(401).json({ error: 'Unauthorized' });
         }
 
-        const { levelId, score, ticks, tries } = req.body as Highscore;
+        const { levelId, score, ticks, tries, inputRecording } = req.body as Highscore;
+        console.log("submit-score", levelId, score, ticks, tries, inputRecording);
 
         // Check if the level exists
         const level = await db.get("SELECT * FROM levels WHERE id = ?", [levelId]);
@@ -129,11 +155,17 @@ interface Highscore {
             return res.status(400).json({ error: 'Level not found' });
         }
 
-        // Insert or update highscore for this user and level
+        // Insert or update highscore for this user and level if the new score is lower
         await db.run(
-            `INSERT OR REPLACE INTO highscores (user_id, level_id, score, ticks, tries) 
-            VALUES (?, ?, ?, ?, ?)`,
-            [req.session.userId, levelId, score, ticks, tries]
+            `INSERT INTO highscores (user_id, level_id, score, ticks, tries, inputRecording) 
+            VALUES (?, ?, ?, ?, ?, ?)
+            ON CONFLICT(user_id, level_id) DO UPDATE SET
+            score = excluded.score,
+            ticks = excluded.ticks,
+            tries = excluded.tries,
+            inputRecording = excluded.inputRecording
+            WHERE excluded.score < highscores.score`,
+            [req.session.userId, levelId, score, ticks, tries, inputRecording]
         );
 
         res.json({ message: 'Highscore submitted successfully' });
@@ -141,62 +173,51 @@ interface Highscore {
 
     // Fetch highscore list (top 10 scores for a given level)
     app.get('/trials/highscores/:levelId', asyncMiddleware(async (req: Request, res: Response) => {
+        console.log("highscores", req.params);
         const levelId = parseInt(req.params.levelId);
 
-        const highscores = await db.all<{ username: string, score: number, ticks: number, tries: number }[]>(
-            `SELECT u.username, h.score, h.ticks, h.tries 
+        const highscores = await db.all<{ id: string, username: string, score: number, ticks: number, tries: number, rank: number }[]>(
+            `SELECT h.id, u.username, h.score, h.ticks, h.tries, ROW_NUMBER() OVER (ORDER BY h.score ASC) AS rank 
             FROM highscores h 
             JOIN users u ON h.user_id = u.id
             WHERE h.level_id = ?
-            ORDER BY h.score DESC LIMIT 10`,
+            ORDER BY h.score ASC
+            `,
             [levelId]
         );
+        // LIMIT ? OFFSET ?            
+        // [levelId, 2, 2]
+
+        console.log("highscores", highscores);
 
         res.json(highscores);
     }));
 
-    
-    // POST: Add a new level
-    app.post('/trials/api/levels', asyncMiddleware(async (req, res) => {
-        const { info, json, base64 } = req.body;
-        info.created = new Date().toISOString();
-        console.log("post", req.body);
-        const result = await db.run(`INSERT INTO levels (info, json, base64) VALUES (?, ?, ?)`, [JSON.stringify(info), JSON.stringify(json), base64]);
-        res.status(201).json({ id: result.lastID });
+    // Fetch inputRecording for a given highscore
+    app.get('/trials/highscores/:highscoreId/inputRecording', asyncMiddleware(async (req: Request, res: Response) => {
+        const highscoreId = parseInt(req.params.highscoreId);
+        const highscore = await db.get<{ inputRecording: string }>("SELECT inputRecording FROM highscores WHERE id = ?", [highscoreId]);
+        if (!highscore) {
+            return res.status(404).json({ error: 'Highscore not found' });
+        }
+        // convert highscore from base64 to arraybuffer and return buffer as binary
+        let a = Buffer.from(highscore.inputRecording, 'base64').toString('binary');
+        console.log("inputRecording", a);
+        res.setHeader('Content-Type', 'application/octet-stream');
+        res.send(a);
+        //res.json({ inputRecording: highscore.inputRecording });
     }));
-    
-    // PUT: Update a level by id
-    app.put('/trials/api/levels/:id', asyncMiddleware(async (req, res) => {
-        const { id } = req.params;
-        const { info, json, base64 } = req.body;
-        info.updated = new Date().toISOString();
-        console.log("put", req.body);
-        const result = await db.run(`UPDATE levels SET info = ?, json = ?, base64 = ? WHERE id = ?`, [JSON.stringify(info), JSON.stringify(json), base64, id]);
-        res.status(200).json({ updated: result.changes });
-    }));
-    
-    // DELETE: Delete a level by id
-    app.delete('/trials/api/levels/:id', asyncMiddleware(async (req, res) => {
-        const { id } = req.params;
-        const result = await db.run(`DELETE FROM levels WHERE id = ?`, id);
-        res.status(200).json({ deleted: result.changes });
-    }));
-    
-    // GET: Get all levels
-    app.get('/trials/api/levels', asyncMiddleware(async (req, res) => {
-        let rows = await db.all(`SELECT id, info FROM levels`)
-        rows.forEach(row => row.info = JSON.parse(row.info));
-        res.status(200).json(rows);
-    }));
-    
-    // GET: Get all levels including tries and ticks for a user
-    app.get('/trials/api/levels/user/:userId', asyncMiddleware(async (req, res) => {
-        const { userId } = req.params;
-        console.log("userId", userId);
 
-
+    createCrudTableEndpoints(app, db, "levels");
+    
+    // GET: Get all levels including tries and ticks for current session user
+    app.get(`/trials/api/levels/user/:userId`, asyncMiddleware(async (req, res) => {
+        //console.log("get-levels", req.params, req.session);
+        //const { userId } = req.params;
+        const userId = req.session.userId;
         const query = `
             SELECT 
+                levels.id,
                 levels.info,
                 highscores.tries,
                 highscores.ticks
@@ -215,18 +236,9 @@ interface Highscore {
         rows.forEach(row => row.info = JSON.parse(row.info));
         res.status(200).json(rows);
     }));
+
+    createCrudTableEndpoints(app, db, "riders");
     
-    // GET: Get level info, json, and base64 by id
-    app.get('/trials/api/levels/:id', asyncMiddleware(async (req, res) => {
-        const { id } = req.params;
-        const row = await db.get(`SELECT * FROM levels WHERE id = ?`, id);
-        if (!row) {
-            return res.status(404).json({ error: 'Level not found' });
-        }
-        row.info = JSON.parse(row.info);
-        row.json = JSON.parse(row.json);
-        res.status(200).json(row);
-    }));
     
     app.use("/trials/public", express.static('static'));
     
@@ -247,36 +259,30 @@ interface Highscore {
     }
     
     fs.watch('./static', (eventType, filename) => notifyClients(filename));
-    
-    app.get("/trials/editor", (req, res) => {
-        res.send(`<!DOCTYPE html>
+
+    const getPage = (entryPoint) => {
+        return `<!DOCTYPE html>
             <html lang="en">
             <head>
-            <script type="module" src="/trials/public/Editor.js"></script>
-            <link href="/trials/public/Editor.css" rel="stylesheet">
+            <script type="module" src="/trials/public/${entryPoint}.js"></script>
+            <link href="/trials/public/${entryPoint}.css" rel="stylesheet">
             <link href="/trials/public/Common.css" rel="stylesheet">
             </head>
-            <body>
-            </body>
+            <body></body>
             </html>
-        `);
+        `
+    }
+    
+    app.get("/trials/rider", (req, res) => {
+        res.send(getPage("RiderEditor"));
+    });
+    
+    app.get("/trials/level", (req, res) => {
+        res.send(getPage("LevelEditor"));
     });
     
     app.get("/trials/game", (req, res) => {
-        res.send(`<!DOCTYPE html>
-            <html lang="en">
-            <head>
-            <script type="module" src="/trials/public/Game.js"></script>
-            <link href="/trials/public/Game.css" rel="stylesheet">
-            <link href="/trials/public/Common.css" rel="stylesheet">
-            </head>
-            <body>
-                <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex;">
-                    <canvas id="gameCanvas" style="flex: 1; min-width: 0; min-height: 0;"></canvas>
-                </div>
-            </body>
-            </html>
-        `);
+        res.send(getPage("Game"));
     });
     
     // Error handling middleware and must be last
@@ -285,6 +291,7 @@ interface Highscore {
         res.status(400).json({error: err.message ?? "" + err});
     });    
     
-    app.listen(6969)
-    console.log("app.js started on port 6969");
+    let port = process.env.PORT ?? 6969;
+    app.listen(port);
+    console.log(`app.js started on port ${port}`);
 })();

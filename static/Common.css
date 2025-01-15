@@ -1,4 +1,9 @@
 :root {
+    --bg1: #e8f5e9;
+    --bg2: #7fa1b2;
+    --bg-hover: #7fa1b2;
+    --tiny_font: 0.75rem;
+
     --gap: 0.625rem;
     --dark: #333333;
     --light: #F5F5F5;
@@ -9,6 +14,121 @@
     --default_margin: 1.875rem;
 
     /* #9e9e9e (Neutral gray) (for secondary buttons) */
+}
+
+.mode_selected {
+    background-color: #ff7043;
+    opacity: 0.8;
+}
+
+.center_text {
+    display: grid;
+    place-items: center;    /* Center both horizontally and vertically */
+    height: 100%;     
+}
+.flex_row {
+    display: flex;
+    flex-direction: row;
+    gap: var(--gap);
+}
+
+.icon {
+    padding: 0.25rem;
+    font-size: 1.75rem;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+th, td {
+    border: none;
+    padding: 8px;
+    text-align: center;
+}
+th {
+    background-color: #f2f2f2;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.form_error {
+    color: red;
+    font-size: var(--tiny_font);
+}
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 20000;
+}
+.grow_input {
+    width: 100%;
+}
+
+
+dialog {
+    border: none;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    padding: 2rem;
+    background-color: var(--bg1);    
+    width: 100%;
+}
+
+.dialog-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}    
+
+
+.btn {
+    font-size: 1.25rem;
+    padding: 0.5rem 1rem;
+    border-radius: 5px;
+    background-color: #1565c0;
+    color: #fff;
+}
+.btn:hover {
+    background-color: #ff7043;
+    opacity: 0.8;
+}
+
+.btn-trash {
+    /* background-color: #dc3545; */
+}
+
+.btn:hover {
+    opacity: 0.8;
+}
+
+.btn:disabled {
+    /* background-color: #cfd8dc; */
+    background-color: #90a4ae;
+    /* background-color: #cccccc; */
+    cursor: not-allowed;
+    color: #eee;
+    /* opacity: 0.6; */
+}    
+
+
+
+
+.tiny_text {
+    font-size: 0.75rem;
 }
 
 .rounded {
@@ -142,3 +262,4 @@ select {
 input[type="range"] {
     padding: 0;
 }
+

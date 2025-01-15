@@ -9,11 +9,12 @@ export const schemaDefinition = {
         "accY": "i64",
         "radius": "i64",
         "mass": "i64",
-        "collidable": "u32",
-        "type": "u32"
+        "flags": "u32",
     },
     "Edge": {
         "length": "i64",
+        // "leanForwardsLength": "i64",
+        // "leanBackwardsLength": "i64",
         "stiffness": "i64",
         "damping": "i64",
         "minLength": "i64",
@@ -21,23 +22,26 @@ export const schemaDefinition = {
         "totalMass": "i64",
         "visible": "u32",
         "v1Idx": "u32",
-        "v2Idx": "u32"
+        "v2Idx": "u32",
+    },
+    "StartVertex": {
+        "x": "i64",
+        "y": "i64",
+        "x0": "i64",
+        "y0": "i64",
+        "x1": "i64",
+        "y1": "i64",
     },
     "Rider": {
-        "frontWheelIdx": "u32",
-        "backWheelIdx": "u32",
-        "bikeFootIdx": "u32",
-        "chainIdx": "u32",
-        "stearingIdx": "u32",
-        "buttIdx": "u32",
+        "centerOfMassX": "i64",
+        "centerOfMassY": "i64",
+        "wheelTorque": "i64",
+        "bikeTorque": "i64",
         "vertices": "VertexArray",
         "edges": "EdgeArray",
-        "startVertices": "VertexArray",
+        "startVertices": "StartVertexArray",
         "startEdges": "EdgeArray",
-        "leanForwardsEdgeLengths": "i64Array",
-        "leanBackwardsEdgeLengths": "i64Array",
-        "riderEdgesIndex": "u32",
-        "riderEdgesCount": "u32",
+        "iterations": "u32",
     },
     "Line": {
         "x1": "i64",
@@ -193,7 +197,7 @@ export class FlatUtil {
 
 export class Builder {
     offset = 0;
-    BITS = 8;
+    static BITS = 12;
 
     constructor(public schema: Schema, entryType, public dataView) {
         this.schema = schema;
@@ -221,7 +225,7 @@ export class Builder {
     }
 
     setFpAt(ptr: number, value: number) {
-        this.dataView.setBigInt64(ptr, BigInt(Math.round(value * (1 << this.BITS))), true);
+        this.dataView.setBigInt64(ptr, BigInt(Math.round(value * (1 << Builder.BITS))), true);
     }
 
     setArray(ptr: number, type: string, field: string, array): [number, number] {

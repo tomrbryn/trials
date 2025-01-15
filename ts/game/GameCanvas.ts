@@ -1,24 +1,28 @@
 import { Canvas } from "../Canvas.ts";
-import type { TrialsGame, Level, Rider, VertexArray } from "../GameStructGeneratedCode.js";
+import type { TrialsGame, Level, Rider, VertexArray, Vertex } from "../GameStructGeneratedCode.js";
+import { paintTerrain } from "./Parallax.js";
 
 export class GameCanvas {
 
-    constructor(public canvas: HTMLElement) {}
+    constructor(public canvas: HTMLCanvasElement) {}
 
     paint(trialsGame: TrialsGame, level: Level, rider: Rider) {
         let ctx = Canvas.updateCanvasSize(this.canvas);
         if (!ctx) {
             return
         }
+
         ctx.lineWidth = 6;
         ctx.lineCap = "round";
         ctx.fillStyle = "white";
         ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
+        // paintTerrain(ctx, this.canvas);
+
         ctx.fillStyle = "black";
 
         ctx.font = "16px 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif";
-        let y = 10;
+        let y = 60;
         ctx.fillText("state: " + trialsGame.getState(), 10, y+=20);
         ctx.fillText("tries: " + trialsGame.getTries(), 10, y+=20);
         ctx.fillText("ticks: " + trialsGame.getTickIdx(), 10, y+=20);
@@ -29,14 +33,15 @@ export class GameCanvas {
         let circles = level.getCircles();
         let checkpoints = level.getCheckpoints();
 
+        ctx.font = "64px 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif";
+
         // translate to chain position
         ctx.save();
         ctx.translate(this.canvas.width / 2, this.canvas.height / 2);
         ctx.scale(0.25, 0.25);
-        let chain = vertices.get(rider.getChainIdx());
-        ctx.translate(-chain.getX(), -chain.getY());            
+        //let chain = vertices.get(rider.getChainIdx());
+        ctx.translate(-rider.getCenterOfMassX(), -rider.getCenterOfMassY());
 
-        GameCanvas.paintRider(ctx, rider);
 
         for (let i=0; i<lines.getLength(); i++) {
             let l = lines.get(i);
@@ -48,10 +53,13 @@ export class GameCanvas {
             Canvas.fillOval(ctx, c.getX(), c.getY(), c.getRadius(), "blue");
         }
         
-        for (let i=0; i<checkpoints.getLength(); i++) {
+        let currentCheckpointIndex = trialsGame.getCurrentCheckpoint();
+        for (let i = 0; i < checkpoints.getLength(); i++) {
             let cp = checkpoints.get(i);
-            Canvas.drawLine(ctx, cp.getX(), cp.getY(), cp.getX(), cp.getY()-100, "#777700");
-        }
+            GameCanvas.paintCheckpoint(ctx, cp.getX(), cp.getY(), i <= currentCheckpointIndex);
+        }        
+        
+        GameCanvas.paintRider(ctx, rider);
 
         ctx.restore();
     }
@@ -59,7 +67,28 @@ export class GameCanvas {
     public static paintRider(ctx, rider: Rider) {
         this.paintVertices(ctx, rider.getVertices());
         this.paintEdges(ctx, rider.getVertices(), rider.getEdges());
+        Canvas.fillOval(ctx, rider.getCenterOfMassX(), rider.getCenterOfMassY(), 10, "yellow");
+        let v0: Vertex = rider.getVertices().get(0);
+        Canvas.fillOval(ctx, v0.getX(), v0.getY(), 6, "blue");
     }   
+
+    public static paintCheckpoint(ctx, x: number, y: number, passed: boolean) {
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x, y - 200);
+        ctx.lineTo(x + 80, y - 160);
+        ctx.lineTo(x, y - 120);
+        ctx.strokeStyle = "#000";
+        ctx.stroke();
+        
+        ctx.beginPath();
+        ctx.moveTo(x, y - 200);
+        ctx.lineTo(x + 80, y - 160);
+        ctx.lineTo(x, y - 120);
+        ctx.closePath();
+        ctx.fillStyle = passed ? "#0f0" : "#f00";
+        ctx.fill();
+    }
 
     public static paintVertices(ctx, vertices: VertexArray) {
         for (let i=0; i<vertices.getLength(); i++) {

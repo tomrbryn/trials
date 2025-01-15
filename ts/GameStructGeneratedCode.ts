@@ -1,6 +1,6 @@
 export class Vertex {
 
-    static SIZE = 72;
+    static SIZE = 68;
 
     constructor(public dataView: DataView, public ptr: number = 0) {
     }
@@ -10,7 +10,7 @@ export class Vertex {
     }
 
     getX(): number {
-        return Number(this.dataView.getBigInt64(this.ptr + 0, true) / 256n);
+        return Number(this.dataView.getBigInt64(this.ptr + 0, true) / 4096n);
     }
 
     setY(newValue: number) {
@@ -18,7 +18,7 @@ export class Vertex {
     }
 
     getY(): number {
-        return Number(this.dataView.getBigInt64(this.ptr + 8, true) / 256n);
+        return Number(this.dataView.getBigInt64(this.ptr + 8, true) / 4096n);
     }
 
     setPrevX(newValue: number) {
@@ -26,7 +26,7 @@ export class Vertex {
     }
 
     getPrevX(): number {
-        return Number(this.dataView.getBigInt64(this.ptr + 16, true) / 256n);
+        return Number(this.dataView.getBigInt64(this.ptr + 16, true) / 4096n);
     }
 
     setPrevY(newValue: number) {
@@ -34,7 +34,7 @@ export class Vertex {
     }
 
     getPrevY(): number {
-        return Number(this.dataView.getBigInt64(this.ptr + 24, true) / 256n);
+        return Number(this.dataView.getBigInt64(this.ptr + 24, true) / 4096n);
     }
 
     setAccX(newValue: number) {
@@ -42,7 +42,7 @@ export class Vertex {
     }
 
     getAccX(): number {
-        return Number(this.dataView.getBigInt64(this.ptr + 32, true) / 256n);
+        return Number(this.dataView.getBigInt64(this.ptr + 32, true) / 4096n);
     }
 
     setAccY(newValue: number) {
@@ -50,7 +50,7 @@ export class Vertex {
     }
 
     getAccY(): number {
-        return Number(this.dataView.getBigInt64(this.ptr + 40, true) / 256n);
+        return Number(this.dataView.getBigInt64(this.ptr + 40, true) / 4096n);
     }
 
     setRadius(newValue: number) {
@@ -58,7 +58,7 @@ export class Vertex {
     }
 
     getRadius(): number {
-        return Number(this.dataView.getBigInt64(this.ptr + 48, true) / 256n);
+        return Number(this.dataView.getBigInt64(this.ptr + 48, true) / 4096n);
     }
 
     setMass(newValue: number) {
@@ -66,23 +66,15 @@ export class Vertex {
     }
 
     getMass(): number {
-        return Number(this.dataView.getBigInt64(this.ptr + 56, true) / 256n);
+        return Number(this.dataView.getBigInt64(this.ptr + 56, true) / 4096n);
     }
 
-    setCollidable(newValue: number) {
+    setFlags(newValue: number) {
         this.dataView.setUint32(this.ptr + 64, newValue, true);
     }
 
-    getCollidable(): number {
+    getFlags(): number {
         return Number(this.dataView.getUint32(this.ptr + 64, true));
-    }
-
-    setType(newValue: number) {
-        this.dataView.setUint32(this.ptr + 68, newValue, true);
-    }
-
-    getType(): number {
-        return Number(this.dataView.getUint32(this.ptr + 68, true));
     }
 }
 
@@ -98,7 +90,7 @@ export class Edge {
     }
 
     getLength(): number {
-        return Number(this.dataView.getBigInt64(this.ptr + 0, true) / 256n);
+        return Number(this.dataView.getBigInt64(this.ptr + 0, true) / 4096n);
     }
 
     setStiffness(newValue: number) {
@@ -106,7 +98,7 @@ export class Edge {
     }
 
     getStiffness(): number {
-        return Number(this.dataView.getBigInt64(this.ptr + 8, true) / 256n);
+        return Number(this.dataView.getBigInt64(this.ptr + 8, true) / 4096n);
     }
 
     setDamping(newValue: number) {
@@ -114,7 +106,7 @@ export class Edge {
     }
 
     getDamping(): number {
-        return Number(this.dataView.getBigInt64(this.ptr + 16, true) / 256n);
+        return Number(this.dataView.getBigInt64(this.ptr + 16, true) / 4096n);
     }
 
     setMinLength(newValue: number) {
@@ -122,7 +114,7 @@ export class Edge {
     }
 
     getMinLength(): number {
-        return Number(this.dataView.getBigInt64(this.ptr + 24, true) / 256n);
+        return Number(this.dataView.getBigInt64(this.ptr + 24, true) / 4096n);
     }
 
     setMaxLength(newValue: number) {
@@ -130,7 +122,7 @@ export class Edge {
     }
 
     getMaxLength(): number {
-        return Number(this.dataView.getBigInt64(this.ptr + 32, true) / 256n);
+        return Number(this.dataView.getBigInt64(this.ptr + 32, true) / 4096n);
     }
 
     setTotalMass(newValue: number) {
@@ -138,7 +130,7 @@ export class Edge {
     }
 
     getTotalMass(): number {
-        return Number(this.dataView.getBigInt64(this.ptr + 40, true) / 256n);
+        return Number(this.dataView.getBigInt64(this.ptr + 40, true) / 4096n);
     }
 
     setVisible(newValue: number) {
@@ -166,6 +158,62 @@ export class Edge {
     }
 }
 
+export class StartVertex {
+
+    static SIZE = 48;
+
+    constructor(public dataView: DataView, public ptr: number = 0) {
+    }
+
+    setX(newValue: number) {
+        this.dataView.setBigInt64(this.ptr + 0, newValue, true);
+    }
+
+    getX(): number {
+        return Number(this.dataView.getBigInt64(this.ptr + 0, true) / 4096n);
+    }
+
+    setY(newValue: number) {
+        this.dataView.setBigInt64(this.ptr + 8, newValue, true);
+    }
+
+    getY(): number {
+        return Number(this.dataView.getBigInt64(this.ptr + 8, true) / 4096n);
+    }
+
+    setX0(newValue: number) {
+        this.dataView.setBigInt64(this.ptr + 16, newValue, true);
+    }
+
+    getX0(): number {
+        return Number(this.dataView.getBigInt64(this.ptr + 16, true) / 4096n);
+    }
+
+    setY0(newValue: number) {
+        this.dataView.setBigInt64(this.ptr + 24, newValue, true);
+    }
+
+    getY0(): number {
+        return Number(this.dataView.getBigInt64(this.ptr + 24, true) / 4096n);
+    }
+
+    setX1(newValue: number) {
+        this.dataView.setBigInt64(this.ptr + 32, newValue, true);
+    }
+
+    getX1(): number {
+        return Number(this.dataView.getBigInt64(this.ptr + 32, true) / 4096n);
+    }
+
+    setY1(newValue: number) {
+        this.dataView.setBigInt64(this.ptr + 40, newValue, true);
+    }
+
+    getY1(): number {
+        return Number(this.dataView.getBigInt64(this.ptr + 40, true) / 4096n);
+    }
+}
+
 export class VertexArray {
 
     static SIZE = 8;
@@ -182,7 +230,7 @@ export class VertexArray {
     }
 
     get(i: number): Vertex {
-        return new Vertex(this.dataView, this.getOffset() + i * 72);
+        return new Vertex(this.dataView, this.getOffset() + i * 68);
     }
 }
 
@@ -206,7 +254,7 @@ export class EdgeArray {
     }
 }
 
-export class i64Array {
+export class StartVertexArray {
 
     static SIZE = 8;
 
@@ -221,104 +269,72 @@ export class i64Array {
         return this.dataView.getUint32(this.ptr + 4, true);
     }
 
-    get(i: number): i64 {
-        return new i64(this.dataView, this.getOffset() + i * 8);
+    get(i: number): StartVertex {
+        return new StartVertex(this.dataView, this.getOffset() + i * 48);
     }
 }
 
 export class Rider {
 
-    static SIZE = 80;
+    static SIZE = 68;
 
     constructor(public dataView: DataView, public ptr: number = 0) {
     }
 
-    setFrontWheelIdx(newValue: number) {
-        this.dataView.setUint32(this.ptr + 0, newValue, true);
+    setCenterOfMassX(newValue: number) {
+        this.dataView.setBigInt64(this.ptr + 0, newValue, true);
     }
 
-    getFrontWheelIdx(): number {
-        return Number(this.dataView.getUint32(this.ptr + 0, true));
+    getCenterOfMassX(): number {
+        return Number(this.dataView.getBigInt64(this.ptr + 0, true) / 4096n);
     }
 
-    setBackWheelIdx(newValue: number) {
-        this.dataView.setUint32(this.ptr + 4, newValue, true);
+    setCenterOfMassY(newValue: number) {
+        this.dataView.setBigInt64(this.ptr + 8, newValue, true);
     }
 
-    getBackWheelIdx(): number {
-        return Number(this.dataView.getUint32(this.ptr + 4, true));
+    getCenterOfMassY(): number {
+        return Number(this.dataView.getBigInt64(this.ptr + 8, true) / 4096n);
     }
 
-    setBikeFootIdx(newValue: number) {
-        this.dataView.setUint32(this.ptr + 8, newValue, true);
+    setWheelTorque(newValue: number) {
+        this.dataView.setBigInt64(this.ptr + 16, newValue, true);
     }
 
-    getBikeFootIdx(): number {
-        return Number(this.dataView.getUint32(this.ptr + 8, true));
+    getWheelTorque(): number {
+        return Number(this.dataView.getBigInt64(this.ptr + 16, true) / 4096n);
     }
 
-    setChainIdx(newValue: number) {
-        this.dataView.setUint32(this.ptr + 12, newValue, true);
+    setBikeTorque(newValue: number) {
+        this.dataView.setBigInt64(this.ptr + 24, newValue, true);
     }
 
-    getChainIdx(): number {
-        return Number(this.dataView.getUint32(this.ptr + 12, true));
-    }
-
-    setStearingIdx(newValue: number) {
-        this.dataView.setUint32(this.ptr + 16, newValue, true);
-    }
-
-    getStearingIdx(): number {
-        return Number(this.dataView.getUint32(this.ptr + 16, true));
-    }
-
-    setButtIdx(newValue: number) {
-        this.dataView.setUint32(this.ptr + 20, newValue, true);
-    }
-
-    getButtIdx(): number {
-        return Number(this.dataView.getUint32(this.ptr + 20, true));
+    getBikeTorque(): number {
+        return Number(this.dataView.getBigInt64(this.ptr + 24, true) / 4096n);
     }
 
     getVertices(): VertexArray {
-        return new VertexArray(this.dataView, this.ptr + 24);
+        return new VertexArray(this.dataView, this.ptr + 32);
     }
 
     getEdges(): EdgeArray {
-        return new EdgeArray(this.dataView, this.ptr + 32);
+        return new EdgeArray(this.dataView, this.ptr + 40);
     }
 
-    getStartVertices(): VertexArray {
-        return new VertexArray(this.dataView, this.ptr + 40);
+    getStartVertices(): StartVertexArray {
+        return new StartVertexArray(this.dataView, this.ptr + 48);
     }
 
     getStartEdges(): EdgeArray {
-        return new EdgeArray(this.dataView, this.ptr + 48);
+        return new EdgeArray(this.dataView, this.ptr + 56);
     }
 
-    getLeanForwardsEdgeLengths(): i64Array {
-        return new i64Array(this.dataView, this.ptr + 56);
+    setIterations(newValue: number) {
+        this.dataView.setUint32(this.ptr + 64, newValue, true);
     }
 
-    getLeanBackwardsEdgeLengths(): i64Array {
-        return new i64Array(this.dataView, this.ptr + 64);
-    }
-
-    setRiderEdgesIndex(newValue: number) {
-        this.dataView.setUint32(this.ptr + 72, newValue, true);
-    }
-
-    getRiderEdgesIndex(): number {
-        return Number(this.dataView.getUint32(this.ptr + 72, true));
-    }
-
-    setRiderEdgesCount(newValue: number) {
-        this.dataView.setUint32(this.ptr + 76, newValue, true);
-    }
-
-    getRiderEdgesCount(): number {
-        return Number(this.dataView.getUint32(this.ptr + 76, true));
+    getIterations(): number {
+        return Number(this.dataView.getUint32(this.ptr + 64, true));
     }
 }
 
@@ -334,7 +350,7 @@ export class Line {
     }
 
     getX1(): number {
-        return Number(this.dataView.getBigInt64(this.ptr + 0, true) / 256n);
+        return Number(this.dataView.getBigInt64(this.ptr + 0, true) / 4096n);
     }
 
     setY1(newValue: number) {
@@ -342,7 +358,7 @@ export class Line {
     }
 
     getY1(): number {
-        return Number(this.dataView.getBigInt64(this.ptr + 8, true) / 256n);
+        return Number(this.dataView.getBigInt64(this.ptr + 8, true) / 4096n);
     }
 
     setX2(newValue: number) {
@@ -350,7 +366,7 @@ export class Line {
     }
 
     getX2(): number {
-        return Number(this.dataView.getBigInt64(this.ptr + 16, true) / 256n);
+        return Number(this.dataView.getBigInt64(this.ptr + 16, true) / 4096n);
     }
 
     setY2(newValue: number) {
@@ -358,7 +374,7 @@ export class Line {
     }
 
     getY2(): number {
-        return Number(this.dataView.getBigInt64(this.ptr + 24, true) / 256n);
+        return Number(this.dataView.getBigInt64(this.ptr + 24, true) / 4096n);
     }
 }
 
@@ -374,7 +390,7 @@ export class Circle {
     }
 
     getX(): number {
-        return Number(this.dataView.getBigInt64(this.ptr + 0, true) / 256n);
+        return Number(this.dataView.getBigInt64(this.ptr + 0, true) / 4096n);
     }
 
     setY(newValue: number) {
@@ -382,7 +398,7 @@ export class Circle {
     }
 
     getY(): number {
-        return Number(this.dataView.getBigInt64(this.ptr + 8, true) / 256n);
+        return Number(this.dataView.getBigInt64(this.ptr + 8, true) / 4096n);
     }
 
     setRadius(newValue: number) {
@@ -390,7 +406,7 @@ export class Circle {
     }
 
     getRadius(): number {
-        return Number(this.dataView.getBigInt64(this.ptr + 16, true) / 256n);
+        return Number(this.dataView.getBigInt64(this.ptr + 16, true) / 4096n);
     }
 }
 
@@ -406,7 +422,7 @@ export class Checkpoint {
     }
 
     getX(): number {
-        return Number(this.dataView.getBigInt64(this.ptr + 0, true) / 256n);
+        return Number(this.dataView.getBigInt64(this.ptr + 0, true) / 4096n);
     }
 
     setY(newValue: number) {
@@ -414,7 +430,7 @@ export class Checkpoint {
     }
 
     getY(): number {
-        return Number(this.dataView.getBigInt64(this.ptr + 8, true) / 256n);
+        return Number(this.dataView.getBigInt64(this.ptr + 8, true) / 4096n);
     }
 
     setPassed(newValue: number) {

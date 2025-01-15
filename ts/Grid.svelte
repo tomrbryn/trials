@@ -1,15 +1,15 @@
 <script lang="ts">
     import { gridStore } from './EditorStore';
-    import { createEventDispatcher } from 'svelte';
 
-    const dispatch = createEventDispatcher();
-    let gridOptions = [0, 32, 64, 128, 256];
+    export let gridOptions = [0, 32, 64, 128, 256];
+    let max = gridOptions[gridOptions.length - 1];
+    let step = max / 32;
 </script>
 
 <div class="levels-container">
     <h1 style="margin: 0; color: #2e7d32;">Grid</h1>
-    <input type="number" min="0" max="256" step="8" bind:value={$gridStore} />    
-    <input type="range" id="grid-slider" min="0" max="256" step="8" bind:value={$gridStore} />
+    <input type="number" min="0" max="{max}" step="{step}" bind:value={$gridStore} />    
+    <input type="range" id="grid-slider" min="0" max="{max}" step="{step}" bind:value={$gridStore} />
     <div style="display: flex; gap: 0.5rem">
         {#each gridOptions as gridOption}
             <button class="btn" class:selected={$gridStore == gridOption} on:click|preventDefault|stopPropagation={() => $gridStore = gridOption}>
