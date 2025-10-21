@@ -282,7 +282,11 @@ interface User {
     });
     
     app.get("/trials/game", (req, res) => {
-        res.send(getPage("Game"));
+        res.send(getPage("GameMain"));
+    });
+
+    app.get("/trials/jsongame", (req, res) => {
+        res.send(getPage("JsonGameMain"));
     });
     
     // Error handling middleware and must be last

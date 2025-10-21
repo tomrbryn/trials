@@ -1,10 +1,9 @@
 import { writable, derived } from 'svelte/store';
 import type { LevelScoreType } from '../Utils';
-import type { Level } from '../GameStructGeneratedCode';
 import type { Playback } from '../Playback';
 
 export const playbackTickStore = writable<number>(30);
-export const physicsLevelStore = writable<Level | null>(null);
+export const playbackIterationStore = writable<number>(10);
 export const playbackStore = writable<Playback | null>(null);
 export const playbackPlayingStore = writable<boolean>(true);
 

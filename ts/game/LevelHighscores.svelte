@@ -1,9 +1,10 @@
 <script lang="ts">
-    import { currentLevelScoreStore, currentLevelStore, popDialog, popPushDialog, pushDialog } from "./GameStore";
     import { Game } from "./Game";
+    import { currentLevelScoreStore, currentLevelStore, popDialog, popPushDialog, pushDialog } from "./GameStore";
     import { InputRecording } from "../InputRecording";
     import { ticksToTimeString } from "../Utils";
 
+    export let game: Game;
     let highscores = [];
 
     async function fetchHighscores() {
@@ -12,7 +13,7 @@
     fetchHighscores();    
 
     function handlePlay() {
-        Game.instance.play();
+        game.play();
         pushDialog("game");
     }
 
@@ -21,7 +22,7 @@
         let inputRecordingUint8Array: Uint8Array = new Uint8Array(inputRecordingBinary);
         let inputRecordingList: number[] = Array.from(inputRecordingUint8Array);
         let inputRecording = InputRecording.runnlengthDecode(inputRecordingList);
-        Game.instance.replay(inputRecording);
+        game.replay(inputRecording);
         pushDialog("game");
     }
 </script>

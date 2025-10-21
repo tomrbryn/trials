@@ -6,7 +6,7 @@ export class Vertex {
     }
 
     setX(newValue: number) {
-        this.dataView.setBigInt64(this.ptr + 0, newValue, true);
+        this.dataView.setBigInt64(this.ptr + 0, BigInt(newValue * 4096), true);
     }
 
     getX(): number {
@@ -14,7 +14,7 @@ export class Vertex {
     }
 
     setY(newValue: number) {
-        this.dataView.setBigInt64(this.ptr + 8, newValue, true);
+        this.dataView.setBigInt64(this.ptr + 8, BigInt(newValue * 4096), true);
     }
 
     getY(): number {
@@ -22,7 +22,7 @@ export class Vertex {
     }
 
     setPrevX(newValue: number) {
-        this.dataView.setBigInt64(this.ptr + 16, newValue, true);
+        this.dataView.setBigInt64(this.ptr + 16, BigInt(newValue * 4096), true);
     }
 
     getPrevX(): number {
@@ -30,7 +30,7 @@ export class Vertex {
     }
 
     setPrevY(newValue: number) {
-        this.dataView.setBigInt64(this.ptr + 24, newValue, true);
+        this.dataView.setBigInt64(this.ptr + 24, BigInt(newValue * 4096), true);
     }
 
     getPrevY(): number {
@@ -38,7 +38,7 @@ export class Vertex {
     }
 
     setAccX(newValue: number) {
-        this.dataView.setBigInt64(this.ptr + 32, newValue, true);
+        this.dataView.setBigInt64(this.ptr + 32, BigInt(newValue * 4096), true);
     }
 
     getAccX(): number {
@@ -46,7 +46,7 @@ export class Vertex {
     }
 
     setAccY(newValue: number) {
-        this.dataView.setBigInt64(this.ptr + 40, newValue, true);
+        this.dataView.setBigInt64(this.ptr + 40, BigInt(newValue * 4096), true);
     }
 
     getAccY(): number {
@@ -54,7 +54,7 @@ export class Vertex {
     }
 
     setRadius(newValue: number) {
-        this.dataView.setBigInt64(this.ptr + 48, newValue, true);
+        this.dataView.setBigInt64(this.ptr + 48, BigInt(newValue * 4096), true);
     }
 
     getRadius(): number {
@@ -62,7 +62,7 @@ export class Vertex {
     }
 
     setMass(newValue: number) {
-        this.dataView.setBigInt64(this.ptr + 56, newValue, true);
+        this.dataView.setBigInt64(this.ptr + 56, BigInt(newValue * 4096), true);
     }
 
     getMass(): number {
@@ -70,7 +70,7 @@ export class Vertex {
     }
 
     setFlags(newValue: number) {
-        this.dataView.setUint32(this.ptr + 64, newValue, true);
+        this.dataView.setUint32(this.ptr + 64, BigInt(newValue * 4096), true);
     }
 
     getFlags(): number {
@@ -86,7 +86,7 @@ export class Edge {
     }
 
     setLength(newValue: number) {
-        this.dataView.setBigInt64(this.ptr + 0, newValue, true);
+        this.dataView.setBigInt64(this.ptr + 0, BigInt(newValue * 4096), true);
     }
 
     getLength(): number {
@@ -94,7 +94,7 @@ export class Edge {
     }
 
     setStiffness(newValue: number) {
-        this.dataView.setBigInt64(this.ptr + 8, newValue, true);
+        this.dataView.setBigInt64(this.ptr + 8, BigInt(newValue * 4096), true);
     }
 
     getStiffness(): number {
@@ -102,7 +102,7 @@ export class Edge {
     }
 
     setDamping(newValue: number) {
-        this.dataView.setBigInt64(this.ptr + 16, newValue, true);
+        this.dataView.setBigInt64(this.ptr + 16, BigInt(newValue * 4096), true);
     }
 
     getDamping(): number {
@@ -110,7 +110,7 @@ export class Edge {
     }
 
     setMinLength(newValue: number) {
-        this.dataView.setBigInt64(this.ptr + 24, newValue, true);
+        this.dataView.setBigInt64(this.ptr + 24, BigInt(newValue * 4096), true);
     }
 
     getMinLength(): number {
@@ -118,7 +118,7 @@ export class Edge {
     }
 
     setMaxLength(newValue: number) {
-        this.dataView.setBigInt64(this.ptr + 32, newValue, true);
+        this.dataView.setBigInt64(this.ptr + 32, BigInt(newValue * 4096), true);
     }
 
     getMaxLength(): number {
@@ -126,7 +126,7 @@ export class Edge {
     }
 
     setTotalMass(newValue: number) {
-        this.dataView.setBigInt64(this.ptr + 40, newValue, true);
+        this.dataView.setBigInt64(this.ptr + 40, BigInt(newValue * 4096), true);
     }
 
     getTotalMass(): number {
@@ -134,7 +134,7 @@ export class Edge {
     }
 
     setVisible(newValue: number) {
-        this.dataView.setUint32(this.ptr + 48, newValue, true);
+        this.dataView.setUint32(this.ptr + 48, BigInt(newValue * 4096), true);
     }
 
     getVisible(): number {
@@ -142,7 +142,7 @@ export class Edge {
     }
 
     setV1Idx(newValue: number) {
-        this.dataView.setUint32(this.ptr + 52, newValue, true);
+        this.dataView.setUint32(this.ptr + 52, BigInt(newValue * 4096), true);
     }
 
     getV1Idx(): number {
@@ -150,7 +150,7 @@ export class Edge {
     }
 
     setV2Idx(newValue: number) {
-        this.dataView.setUint32(this.ptr + 56, newValue, true);
+        this.dataView.setUint32(this.ptr + 56, BigInt(newValue * 4096), true);
     }
 
     getV2Idx(): number {
@@ -166,7 +166,7 @@ export class StartVertex {
     }
 
     setX(newValue: number) {
-        this.dataView.setBigInt64(this.ptr + 0, newValue, true);
+        this.dataView.setBigInt64(this.ptr + 0, BigInt(newValue * 4096), true);
     }
 
     getX(): number {
@@ -174,7 +174,7 @@ export class StartVertex {
     }
 
     setY(newValue: number) {
-        this.dataView.setBigInt64(this.ptr + 8, newValue, true);
+        this.dataView.setBigInt64(this.ptr + 8, BigInt(newValue * 4096), true);
     }
 
     getY(): number {
@@ -182,7 +182,7 @@ export class StartVertex {
     }
 
     setX0(newValue: number) {
-        this.dataView.setBigInt64(this.ptr + 16, newValue, true);
+        this.dataView.setBigInt64(this.ptr + 16, BigInt(newValue * 4096), true);
     }
 
     getX0(): number {
@@ -190,7 +190,7 @@ export class StartVertex {
     }
 
     setY0(newValue: number) {
-        this.dataView.setBigInt64(this.ptr + 24, newValue, true);
+        this.dataView.setBigInt64(this.ptr + 24, BigInt(newValue * 4096), true);
     }
 
     getY0(): number {
@@ -198,7 +198,7 @@ export class StartVertex {
     }
 
     setX1(newValue: number) {
-        this.dataView.setBigInt64(this.ptr + 32, newValue, true);
+        this.dataView.setBigInt64(this.ptr + 32, BigInt(newValue * 4096), true);
     }
 
     getX1(): number {
@@ -206,7 +206,7 @@ export class StartVertex {
     }
 
     setY1(newValue: number) {
-        this.dataView.setBigInt64(this.ptr + 40, newValue, true);
+        this.dataView.setBigInt64(this.ptr + 40, BigInt(newValue * 4096), true);
     }
 
     getY1(): number {
@@ -282,7 +282,7 @@ export class Rider {
     }
 
     setCenterOfMassX(newValue: number) {
-        this.dataView.setBigInt64(this.ptr + 0, newValue, true);
+        this.dataView.setBigInt64(this.ptr + 0, BigInt(newValue * 4096), true);
     }
 
     getCenterOfMassX(): number {
@@ -290,7 +290,7 @@ export class Rider {
     }
 
     setCenterOfMassY(newValue: number) {
-        this.dataView.setBigInt64(this.ptr + 8, newValue, true);
+        this.dataView.setBigInt64(this.ptr + 8, BigInt(newValue * 4096), true);
     }
 
     getCenterOfMassY(): number {
@@ -298,7 +298,7 @@ export class Rider {
     }
 
     setWheelTorque(newValue: number) {
-        this.dataView.setBigInt64(this.ptr + 16, newValue, true);
+        this.dataView.setBigInt64(this.ptr + 16, BigInt(newValue * 4096), true);
     }
 
     getWheelTorque(): number {
@@ -306,7 +306,7 @@ export class Rider {
     }
 
     setBikeTorque(newValue: number) {
-        this.dataView.setBigInt64(this.ptr + 24, newValue, true);
+        this.dataView.setBigInt64(this.ptr + 24, BigInt(newValue * 4096), true);
     }
 
     getBikeTorque(): number {
@@ -330,7 +330,7 @@ export class Rider {
     }
 
     setIterations(newValue: number) {
-        this.dataView.setUint32(this.ptr + 64, newValue, true);
+        this.dataView.setUint32(this.ptr + 64, BigInt(newValue * 4096), true);
     }
 
     getIterations(): number {
@@ -346,7 +346,7 @@ export class Line {
     }
 
     setX1(newValue: number) {
-        this.dataView.setBigInt64(this.ptr + 0, newValue, true);
+        this.dataView.setBigInt64(this.ptr + 0, BigInt(newValue * 4096), true);
     }
 
     getX1(): number {
@@ -354,7 +354,7 @@ export class Line {
     }
 
     setY1(newValue: number) {
-        this.dataView.setBigInt64(this.ptr + 8, newValue, true);
+        this.dataView.setBigInt64(this.ptr + 8, BigInt(newValue * 4096), true);
     }
 
     getY1(): number {
@@ -362,7 +362,7 @@ export class Line {
     }
 
     setX2(newValue: number) {
-        this.dataView.setBigInt64(this.ptr + 16, newValue, true);
+        this.dataView.setBigInt64(this.ptr + 16, BigInt(newValue * 4096), true);
     }
 
     getX2(): number {
@@ -370,7 +370,7 @@ export class Line {
     }
 
     setY2(newValue: number) {
-        this.dataView.setBigInt64(this.ptr + 24, newValue, true);
+        this.dataView.setBigInt64(this.ptr + 24, BigInt(newValue * 4096), true);
     }
 
     getY2(): number {
@@ -386,7 +386,7 @@ export class Circle {
     }
 
     setX(newValue: number) {
-        this.dataView.setBigInt64(this.ptr + 0, newValue, true);
+        this.dataView.setBigInt64(this.ptr + 0, BigInt(newValue * 4096), true);
     }
 
     getX(): number {
@@ -394,7 +394,7 @@ export class Circle {
     }
 
     setY(newValue: number) {
-        this.dataView.setBigInt64(this.ptr + 8, newValue, true);
+        this.dataView.setBigInt64(this.ptr + 8, BigInt(newValue * 4096), true);
     }
 
     getY(): number {
@@ -402,7 +402,7 @@ export class Circle {
     }
 
     setRadius(newValue: number) {
-        this.dataView.setBigInt64(this.ptr + 16, newValue, true);
+        this.dataView.setBigInt64(this.ptr + 16, BigInt(newValue * 4096), true);
     }
 
     getRadius(): number {
@@ -418,7 +418,7 @@ export class Checkpoint {
     }
 
     setX(newValue: number) {
-        this.dataView.setBigInt64(this.ptr + 0, newValue, true);
+        this.dataView.setBigInt64(this.ptr + 0, BigInt(newValue * 4096), true);
     }
 
     getX(): number {
@@ -426,7 +426,7 @@ export class Checkpoint {
     }
 
     setY(newValue: number) {
-        this.dataView.setBigInt64(this.ptr + 8, newValue, true);
+        this.dataView.setBigInt64(this.ptr + 8, BigInt(newValue * 4096), true);
     }
 
     getY(): number {
@@ -434,7 +434,7 @@ export class Checkpoint {
     }
 
     setPassed(newValue: number) {
-        this.dataView.setUint32(this.ptr + 16, newValue, true);
+        this.dataView.setUint32(this.ptr + 16, BigInt(newValue * 4096), true);
     }
 
     getPassed(): number {
@@ -530,7 +530,7 @@ export class TrialsGame {
     }
 
     setState(newValue: number) {
-        this.dataView.setUint32(this.ptr + 0, newValue, true);
+        this.dataView.setUint32(this.ptr + 0, BigInt(newValue * 4096), true);
     }
 
     getState(): number {
@@ -538,7 +538,7 @@ export class TrialsGame {
     }
 
     setTries(newValue: number) {
-        this.dataView.setUint32(this.ptr + 4, newValue, true);
+        this.dataView.setUint32(this.ptr + 4, BigInt(newValue * 4096), true);
     }
 
     getTries(): number {
@@ -546,7 +546,7 @@ export class TrialsGame {
     }
 
     setCurrentCheckpoint(newValue: number) {
-        this.dataView.setUint32(this.ptr + 8, newValue, true);
+        this.dataView.setUint32(this.ptr + 8, BigInt(newValue * 4096), true);
     }
 
     getCurrentCheckpoint(): number {
@@ -554,7 +554,7 @@ export class TrialsGame {
     }
 
     setTickIdx(newValue: number) {
-        this.dataView.setUint32(this.ptr + 12, newValue, true);
+        this.dataView.setUint32(this.ptr + 12, BigInt(newValue * 4096), true);
     }
 
     getTickIdx(): number {

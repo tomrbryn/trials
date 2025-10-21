@@ -8,7 +8,7 @@ import { createPhysics, Physics } from '../Physics';
 import { KeyState as KeyState } from '../KeyState';
 import { Grid } from '../Grid';
 import { ViewTransform } from '../ViewTransform';
-import { createEdge, createVertex, Edge, findClosest, RiderCreator, Vertex, type ClosestRiderPoint } from '../RiderCreator';
+import { createEdge, createVertex, findClosest, JsonRiderF, VertexF, type ClosestRiderPoint, type Edge, type Vertex } from '../RiderCreator';
 import { createDefaultRiderEntry, type RiderEntry } from '../Entry';
 import { get } from 'svelte/store';
 
@@ -282,7 +282,7 @@ export class RiderEditor {
             requestAnimationFrame(update);
         }
         let render = (ctx) => {
-            let rider: RiderCreator = this.riderEntry.json;
+            let rider: JsonRiderF = this.riderEntry.json;
             ctx.lineWidth = 2;
             ctx.lineCap = "round";
             ctx.fillStyle = "white";
@@ -301,7 +301,7 @@ export class RiderEditor {
 
             for (let i=0; i<rider.vertices.length; i++) {
                 let v = rider.vertices[i];
-                let pos = v.getPos(isLeaning);
+                let pos = VertexF.getPos(v, isLeaning);
                 let style = v == theSelectedVertex ? "#dd6043" : "green";
                 Canvas.fillOval(ctx, pos.x, pos.y, v.radius, style);
                 if (!isNaN(v.lean.x)) {
@@ -316,18 +316,18 @@ export class RiderEditor {
                 let e = rider.edges[i];
                 let v1 = rider.vertices[e.v1Idx];
                 let v2 = rider.vertices[e.v2Idx];
-                let p1 = v1.getPos(isLeaning);
-                let p2 = v2.getPos(isLeaning);
+                let p1 = VertexF.getPos(v1, isLeaning);
+                let p2 = VertexF.getPos(v2, isLeaning);
                 let transparency = e.visible ? "ff" : "44";
                 let style = (e == theSelectedEdge ? "#ff7043" : "#000000") + transparency;
                 Canvas.drawLine(ctx, p1.x, p1.y, p2.x, p2.y, style);
             }
             if (mode == "addEdge" && addEdgeData != null) {
                 let v1 = rider.vertices[addEdgeData.v1Idx];
-                let p1 = v1.getPos(isLeaning);
+                let p1 = VertexF.getPos(v1, isLeaning);
                 if (addEdgeData.v2Idx !== addEdgeData.v1Idx) {
                     let v2 = rider.vertices[addEdgeData.v2Idx];
-                    let p2 = v2.getPos(isLeaning);
+                    let p2 = VertexF.getPos(v2, isLeaning);
                     Canvas.drawLine(ctx, p1.x, p1.y, p2.x, p2.y, "purple");
                 } else if (movePointWorld != null) {
                     Canvas.drawLine(ctx, p1.x, p1.y, movePointWorld.x, movePointWorld.y, "red");

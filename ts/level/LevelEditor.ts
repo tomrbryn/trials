@@ -11,7 +11,7 @@ import { createSchema, schemaDefinition } from '../Schema';
 import { GameCanvas } from '../game/GameCanvas';
 import { INPUT_CHECKPOINT, KeyState as KeyState } from '../KeyState';
 import type { Action } from '../UndoRedoManager';
-import { RiderCreator } from '../RiderCreator';
+import { JsonRiderF } from '../RiderCreator';
 
 // don't show default context menu in browser
 document.addEventListener('contextmenu', (event) => event.preventDefault());
@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     let physics = await createPhysics();
     let schema = createSchema(schemaDefinition);
-    let riderData = riderToBinary(schema, new RiderCreator().createDefault());
+    let riderData = riderToBinary(schema, new JsonRiderF().createDefault());
     console.log("riderData", riderData);
     const editor = new Editor(physics, riderData);
     new EditorUI({target: document.body, props: {editor}});

@@ -1,7 +1,7 @@
-import type { RiderCreator } from "./RiderCreator.js";
+import { JsonRiderF, type JsonRider } from "./RiderCreator.js";
 import { Builder, Schema } from "./Schema.js";
 
-export type Level = {
+export type CreatorLevel = {
     lineArrays: number[][][],
     checkpoints: number[][],
     circles: number[][],
@@ -20,7 +20,7 @@ export type Closest = {
     subIndex: number
 };
 
-export function findClosest(level: Level, pos: Point, maxDistance: number = Number.MAX_VALUE): Closest {
+export function findClosest(level: CreatorLevel, pos: Point, maxDistance: number = Number.MAX_VALUE): Closest {
     let closest: Closest = {
         point: null,
         distance: maxDistance,
@@ -85,24 +85,56 @@ export function gameToBinary(schema: Schema) {
     return arrayBuffer.slice(0, builder.offset);
 }
 
-export function levelToBinary(schema: Schema, level: Level): ArrayBuffer {
+export function levelToBinary(schema: Schema, level: CreatorLevel): ArrayBuffer {
     let arrayBuffer = new ArrayBuffer(1024*64);
     let builder = new Builder(schema, "Level", new DataView(arrayBuffer));
     applyLevelToBuilder(builder, level);
     return arrayBuffer.slice(0, builder.offset);
 }
 
-export function riderToBinary(schema: Schema, rider: RiderCreator): ArrayBuffer {
+export function riderToBinary(schema: Schema, rider: JsonRider): ArrayBuffer {
     let arrayBuffer = new ArrayBuffer(1024*64);
     let builder = new Builder(schema, "Rider", new DataView(arrayBuffer));
     //let rider = new RiderCreator.RiderCreator();
     //rider.createSimple();
     //rider.createDefault();
-    rider.applyToBuilder(builder);
+    JsonRiderF.applyToBuilder(rider, builder);
     return arrayBuffer.slice(0, builder.offset);
 }
 
-export function createLevel(): Level {
+export function createLineLevel(): CreatorLevel {
+    return {
+        lineArrays: [[
+            [-2200, 0],
+            [ 2200, 0],
+        ]],
+        checkpoints: [
+            [-2000, 0],
+            [2000, 0],
+        ],
+        circles: [[-2000, 100, 120]],
+        offset: [0, 0]
+    };
+}
+
+export function createDropLevel(): CreatorLevel {
+    return {
+        lineArrays: [[
+            [-2200, -400],
+            [-1200, -400],
+            [-1200, 700],
+            [ 2200, 700],
+        ]],
+        checkpoints: [
+            [-2000, -400],
+            [2000, 700],
+        ],
+        circles: [],
+        offset: [0, 0]
+    };
+}
+
+export function createLevel(): CreatorLevel {
     let level1 = {
         lineArrays: [[
             [0, 490],
@@ -268,7 +300,7 @@ function lineArrayToLineList(lineArray: number[][]): number[][][] {
     return lines;
 }
 
-export function applyLevelToBuilder(b: Builder, level: Level) {
+export function applyLevelToBuilder(b: Builder, level: CreatorLevel) {
     let lines: number[][][] = [];
     for (let lineArray of level.lineArrays) {
         lineArrayToLineList(lineArray).forEach(line => lines.push(line));

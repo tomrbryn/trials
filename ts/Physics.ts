@@ -1,4 +1,4 @@
-import { ticksStore, triesStore, physicsLevelStore } from "./game/GameStore";
+import { ticksStore, triesStore } from "./game/GameStore";
 import { Level, Rider, TrialsGame } from "./GameStructGeneratedCode";
 import { InputRecording } from "./InputRecording";
 
@@ -46,11 +46,13 @@ export class Physics {
 
         this.level = new Level(new DataView(this.module.HEAPU8.buffer, this.levelHeapPtr, levelUint8.length));
         this.rider = new Rider(new DataView(this.module.HEAPU8.buffer, this.riderHeapPtr, riderUint8.length));
-
-        physicsLevelStore.set(this.level);
     }
 
     tick(input: number) {
+        this.tickStart(input);
+    }
+
+    tickStart(input: number) {
         this.inputRecording.record(input);
         this.module._tick(input);
         triesStore.set(this.trialsGame.getTries());
@@ -60,5 +62,9 @@ export class Physics {
     newGame() {
         this.inputRecording.clear();
         this.module._newGame();
+    }
+
+    getRider(): Rider {
+        return this.rider;
     }
 }

@@ -72,7 +72,7 @@ function generateTypeScriptCode(schema: Schema): string {
                 code +=
 `
     set${field.name.charAt(0).toUpperCase() + field.name.slice(1)}(newValue: ${tsTypeMap[field.type.name]}) {
-        this.dataView.set${dataViewMap[field.type.name]}(this.ptr + ${field.offset}, newValue, true);
+        this.dataView.set${dataViewMap[field.type.name]}(this.ptr + ${field.offset}, BigInt(newValue * ${1 << Builder.BITS}), true);
     }
 
     get${field.name.charAt(0).toUpperCase() + field.name.slice(1)}(): ${tsTypeMap[field.type.name]} {

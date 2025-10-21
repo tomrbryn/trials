@@ -1,5 +1,5 @@
-import { RiderCreator } from "./RiderCreator";
-import type { Level } from "./LevelCreator";
+import { JsonRiderF } from "./RiderCreator";
+import { createLineLevel, type CreatorLevel } from "./LevelCreator";
 
 export type EntryInfo = {
     name: string,
@@ -14,7 +14,7 @@ export type Entry = {
 }
 
 export type LevelEntry = {
-    json: Level,
+    json: CreatorLevel,
 } & Entry
 
 export function createDefaultLevelEntry(): LevelEntry {
@@ -23,25 +23,13 @@ export function createDefaultLevelEntry(): LevelEntry {
         info: {
             name: "New Level",
         },
-        json: {
-            lineArrays: [[
-                [-2200, 0],
-                [ 2200, 0],
-            ]],
-            checkpoints: [
-                [-2000, 0],
-                [0, 0],
-                [2000, 0],
-            ],
-            circles: [[200, 0, 100]],
-            offset: [0, 0]
-        },
+        json: createLineLevel(),
         base64: "",
     };
 }
 
 export type RiderEntry = {
-    json: RiderCreator,
+    json: JsonRiderF,
 } & Entry
 
 export function createDefaultRiderEntry(): RiderEntry {
@@ -50,7 +38,7 @@ export function createDefaultRiderEntry(): RiderEntry {
         info: {
             name: "Default Rider",
         },
-        json: new RiderCreator().createDefault(),
+        json: new JsonRiderF().createDefault(),
         base64: "",
     };
 }
@@ -61,7 +49,7 @@ export function createSimpleRiderEntry(): RiderEntry {
         info: {
             name: "Simple Rider",
         },
-        json: new RiderCreator().createSimple(),
+        json: new JsonRiderF().createSimple(),
         base64: "",
     };
 }

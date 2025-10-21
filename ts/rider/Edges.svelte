@@ -121,7 +121,7 @@
                 on:change={(event) => changeProperty(edge, 'visible', edge.visible, event.target.checked)} /></div>
 
             <div data-property={"minLength"}>{Math.round(edge.minLength)}</div>
-            <div>{Math.round(edge.length)}</div>
+            <div>{Math.round(edge.startLength)}</div>
             <div>{Math.round(edge.leanLength)}</div>
             <div data-property="maxLength">{Math.round(Math.min(edge.maxLength, 999))}</div>
             <div data-property="stiffness">{edge.stiffness.toFixed(2)}</div>

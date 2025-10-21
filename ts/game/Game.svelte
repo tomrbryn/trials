@@ -4,7 +4,7 @@
     import LevelList from './LevelList.svelte';
     import LevelHighscores from './LevelHighscores.svelte';
     import Login from './Login.svelte';
-    import { dialogStackTop, pushDialog, userStore, updateUserStore, triesStore, ticksStore, playbackTickStore, playbackStore, playbackPlayingStore } from './GameStore';
+    import { dialogStackTop, pushDialog, userStore, updateUserStore, triesStore, ticksStore, playbackTickStore, playbackStore, playbackPlayingStore, playbackIterationStore } from './GameStore';
     import CreateAccount from './CreateAccount.svelte';
     import { ticksToTimeString } from '../Utils';
     import Slider from './Slider.svelte';
@@ -12,10 +12,25 @@
     export let game: Game;
     let canvas: HTMLCanvasElement;
     let tickSlider: Slider;
-    let sliderMax = 101;
+    let tickSliderMax = 101;
+    let iterationSlider: Slider;
+    let iterationSliderMax = 10;
+
+    function togglePlayback() {
+        game.togglePlayback();
+    }
+
+    function togglePlayingPlayback() {
+        $playbackPlayingStore = !$playbackPlayingStore;
+    }
 
     function tickSliderChanged(value) {
-        console.log("tickSliderChanged", value);
+        // console.log("tickSliderChanged", value);
+        $playbackPlayingStore = false;
+    }
+
+    function iterationSliderChanged(value) {
+        // console.log("iterationSliderChanged", value);
         $playbackPlayingStore = false;
     }
 
@@ -23,14 +38,14 @@
         console.log("playback changed", $playbackStore);
         if (tickSlider) {
             console.log("setting max", $playbackStore?.recording.recording.length);
-            sliderMax = $playbackStore?.recording.recording.length ?? 200;
+            tickSliderMax = $playbackStore?.recording.recording.length ?? 200;
         }
     }
 
     onMount(() => {
         game.start(canvas);
         console.log("Game started", $playbackStore);
-        sliderMax = $playbackStore?.getTickIdx() ?? 100;
+        tickSliderMax = $playbackStore?.getTickIdx() ?? 100;
     });
     // ⏱️ ❌ ☠️ 💔
 </script>
@@ -50,15 +65,24 @@
     </div>     
 </div>
 
-<div id="sliders" style="position: absolute; bottom: 0; left: 0; right: 0; display: flex; gap: 1rem;">
-    <Slider bind:this={tickSlider} text="Tick" bind:max={sliderMax} bind:value={$playbackTickStore} on:sliderChange={tickSliderChanged}></Slider>
+<div id="sliders" style="position: absolute; bottom: 0; left: 0; right: 0; display: flex; gap: 0.125rem;">
+    
+    <button class="btn" on:click|preventDefault={togglePlayback}>{$playbackStore != null ? '?' : '📷'}</button>
+    <button class="play" on:click|preventDefault={togglePlayingPlayback}>{$playbackPlayingStore ? '⏸️' : '▶️'}</button>
+    <div style="flex: 1; display: flex;">
+        <Slider bind:this={tickSlider} text="Tick" bind:max={tickSliderMax} bind:value={$playbackTickStore} on:sliderChange={tickSliderChanged}></Slider>
+    </div>
+    <div style="flex: 0; display: flex; min-width: 100px;">
+        <Slider bind:this={iterationSlider} text="Iteration" bind:max={iterationSliderMax} bind:value={$playbackIterationStore} on:sliderChange={iterationSliderChanged}></Slider>
+    </div>
+    
 
 </div>
 
 {#if $dialogStackTop === 'levelList'}
-    <LevelList />
+    <LevelList game={game} />
 {:else if $dialogStackTop === 'levelHighscores'}
-    <LevelHighscores />
+    <LevelHighscores game={game} />
 {:else if $dialogStackTop === 'login'}
     <Login />
 {:else if $dialogStackTop === 'createAccount'}
@@ -66,7 +90,7 @@
 {:else if $dialogStackTop === 'game'}
 
 {:else}
-    <LevelList />
+    <LevelList game={game} />
 {/if}
 
 <style>
@@ -80,9 +104,16 @@
         align-items: baseline;
         gap: 0.25rem;
     }
-    .status_icon {
-    }
     .status_text {
         text-align: center;
+    }
+    .btn {
+        background-color: #e8f5e9;
+        /* color: black; */
+        font-size: 1.5rem;
+        padding: 0;
+        /* border-radius: 2.5rem; */
+        /* align-items: baseline; */
+        /* gap: 0.25rem; */
     }
 </style>

@@ -1,53 +1,62 @@
-import { createSchema, schemaDefinition } from "../Schema";
-import { createLevel, levelToBinary, riderToBinary, type CreatorLevel }  from "../LevelCreator";
+import { type CreatorLevel }  from "../LevelCreator";
 import { GameCanvas } from './GameCanvas';
 import { KeyState } from '../KeyState';
-import { Physics } from '../Physics';
-import { currentLevelStore, currentLevelScoreStore, popDialog, userStore, playbackStore, playbackTickStore, playbackPlayingStore } from './GameStore';
+import { currentLevelStore, currentLevelScoreStore, popDialog, userStore, playbackStore, playbackTickStore, playbackPlayingStore, playbackIterationStore } from './GameStore';
 import { get } from 'svelte/store';
 import { base64ToArrayBuffer, numbersToBase64, type Highscore, type LevelScoreType } from '../Utils';
-import type { InputRecording } from '../InputRecording';
-import { JsonRiderF } from '../RiderCreator';
+import { InputRecording } from '../InputRecording';
 import { Playback } from '../Playback';
+import { JsonPhysics } from '../JsonPhysics';
 
-export class Game {
+
+console.log("aaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+
+export class JsonGame {
 
     async fetchAndLoadLevel(level: LevelScoreType) {
         let data = await (await fetch('/trials/api/levels/' + level.id)).json();
         this.loadLevel(base64ToArrayBuffer(data.base64), data.json);
         currentLevelStore.set(level);
         currentLevelScoreStore.set(level);
-        console.log("loadLevel", level, data.json);
+        console.log("json loadLevel", level, data.json);
     }
-    
 
-    // static instance: Game = new Game();
+    physics: JsonPhysics = new JsonPhysics();
 
-    physics: Physics
-    riderData: ArrayBuffer;
+    constructor() {
+        playbackTickStore.subscribe(tick => {
+            let playback = get(playbackStore);
+            if (tick !== null && playback) {
+                playback.setTickIdx(tick, get(playbackIterationStore));
+            }
+        });
+        playbackIterationStore.subscribe(iteration => {
+            let playback = get(playbackStore);
+            if (playback) {
+                playback.setIterationIdx(iteration);
+            }
+        });
+
+    }
 
     start(c: HTMLCanvasElement) {
         let canvas = new GameCanvas(c);
         let keyState = new KeyState(pressEvent => {
             if (pressEvent.key == "Enter") {
-                this.physics.newGame();
+                this.play();
             } else  if (pressEvent.key == "Escape") {
                 popDialog();
             }
         });
     
-        let schema = createSchema(schemaDefinition);
-        let levelData = levelToBinary(schema, createLevel());
-        this.riderData = riderToBinary(schema, new JsonRiderF().createDefault());
-        this.physics.setData(levelData, this.riderData);
-
         let prevState = -1;
     
         const step = (timeStampMs: number) => {
             let playback = get(playbackStore);
             if (playback) {
-                if (get(playbackPlayingStore)) {                    
-                    playback.setTickIdx(playback.getTickIdx() + 1);
+                if (get(playbackPlayingStore)) {
+                    let nextTickIdx = (playback.getTickIdx() + 1) % playback.recording.recording.length;
+                    playback.setTickIdx(nextTickIdx, get(playbackIterationStore));
                     playbackTickStore.set(playback.getTickIdx());
                 }
             } else {
@@ -80,20 +89,24 @@ export class Game {
                             headers: {'Content-Type': 'application/json'},
                             body: JSON.stringify(highscore)
                         });
+
+                        this.replay(new InputRecording(this.physics.inputRecording.recording.slice()));
                     }
                     prevState = state;
                 }    
             }
 
-            canvas.paint(this.physics.trialsGame, this.physics.level, this.physics.rider);
+            canvas.paint(this.physics.trialsGame, this.physics.level, this.physics.getRider());
             requestAnimationFrame(step);
         }
     
         requestAnimationFrame(step);
+
+        this.play();
     }
 
     loadLevel(levelData: ArrayBuffer, jsonLevel: CreatorLevel) {
-        this.physics.setData(levelData, this.riderData);
+        this.physics.setData(jsonLevel);
     }
 
     play() {
@@ -105,5 +118,15 @@ export class Game {
         console.log("replay", inputRecording);
         playbackStore.set(new Playback(this.physics, inputRecording));
         playbackPlayingStore.set(true);
+    }
+
+    togglePlayback() {
+        console.log("JsonGame.togglePlayback");
+        let playback = get(playbackStore);
+        if (playback) {
+            this.play();
+        } else {
+            this.replay(new InputRecording(this.physics.inputRecording.recording.slice()));
+        }
     }
 }

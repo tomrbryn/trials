@@ -1,12 +1,13 @@
 import { Canvas } from "../Canvas.ts";
-import type { TrialsGame, Level, Rider, VertexArray, Vertex } from "../GameStructGeneratedCode.js";
+import type { TrialsGame, Level, Rider, VertexArray, Vertex, EdgeArray } from "../GameStructGeneratedCode.js";
+import type { JsonTrialsGame } from "../JsonPhysics.js";
 import { paintTerrain } from "./Parallax.js";
 
 export class GameCanvas {
 
     constructor(public canvas: HTMLCanvasElement) {}
 
-    paint(trialsGame: TrialsGame, level: Level, rider: Rider) {
+    paint(trialsGame: TrialsGame | JsonTrialsGame, level: Level, rider: Rider) {
         let ctx = Canvas.updateCanvasSize(this.canvas);
         if (!ctx) {
             return

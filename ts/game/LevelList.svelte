@@ -6,6 +6,7 @@
 // 🏆 👑 🥇  🥈  🥉    
 
 
+    export let game: Game;
     let levels: LevelScoreType[] = [];
 
     async function fetchLevels() {
@@ -15,13 +16,13 @@
 
 
     async function handleOpen(level: LevelScoreType) {
-        await Game.loadLevel(level);
-        Game.instance.play();
+        await game.fetchAndLoadLevel(level);
+        game.play();
         pushDialog("game");
     }
 
     async function handleHighscores(level: LevelScoreType) {
-        await Game.loadLevel(level);
+        await game.fetchAndLoadLevel(level);
         pushDialog("levelHighscores");
     }
 

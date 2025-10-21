@@ -4,7 +4,7 @@
     import Grid from '../Grid.svelte';
     import { RiderEditor } from './RiderEditor';
     import { type Point, riderToBinary } from "../LevelCreator";
-    import { RiderCreator } from '../RiderCreator';
+    import { JsonRiderF } from '../RiderCreator';
     import { scaleFactorStore } from '../EditorStore';
     import { modeStore, modes, leaning, riderEntryStore } from './RiderEditorStore';
     import { createSchema, schemaDefinition } from "../Schema.js";
@@ -97,7 +97,7 @@
         let newInfo = Object.assign({}, $riderEntryStore.info, {name: entryName});
         let newRiderEntry = Object.assign({}, $riderEntryStore, {info: newInfo});
         let schema = createSchema(schemaDefinition);
-        let arrayBuffer = riderToBinary(schema, new RiderCreator().createDefault())
+        let arrayBuffer = riderToBinary(schema, new JsonRiderF().createDefault())
         newRiderEntry.base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
         return newRiderEntry;
     }    
